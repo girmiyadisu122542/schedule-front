@@ -1,0 +1,29 @@
+<script setup lang="ts">
+const props = defineProps<{
+    size?: number | string;
+    color?: string;
+    stroke?: string;
+    strokeWidth?: number | string;
+}>();
+</script>
+
+<template>
+    <svg
+        :width="props.size || 24"
+        :height="props.size || 24"
+        fill="none"
+        :stroke="props.stroke || 'currentColor'"
+        :stroke-width="props.strokeWidth || 1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        viewBox="0 0 24 24">
+        <path d="M4 14.5H20" />
+        <path d="M4 19.5H20" />
+        <path d="M14 4.5H20" />
+        <path d="M14 9.5H20" />
+        <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M4 5.00154C4.00002 4.64129 4.19381 4.30888 4.5073 4.13139C4.8208 3.95389 5.20553 3.95874 5.51446 4.14407L8.84524 6.14255C9.14642 6.32328 9.33071 6.64878 9.33071 7.00002C9.33071 7.35127 9.14642 7.67676 8.84524 7.85749L5.51446 9.85602C5.20553 10.0414 4.82078 10.0462 4.50728 9.8687C4.19378 9.69119 4 9.35877 4 8.9985V5.00154Z" />
+    </svg>
+</template>

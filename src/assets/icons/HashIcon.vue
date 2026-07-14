@@ -1,0 +1,56 @@
+<template>
+    <svg
+        width="1em"
+        height="1em"
+        viewBox="0 0 24 24">
+        <path
+            d="M0 0h24v24H0z"
+            fill="none" />
+        <g
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5">
+            <g stroke-dasharray="20">
+                <path d="M4 9h17">
+                    <animate
+                        fill="freeze"
+                        attributeName="stroke-dashoffset"
+                        dur="0.3s"
+                        values="20;0" />
+                </path>
+                <path
+                    stroke-dashoffset="20"
+                    d="M3 15h17">
+                    <animate
+                        fill="freeze"
+                        attributeName="stroke-dashoffset"
+                        begin="0.3s"
+                        dur="0.3s"
+                        to="0" />
+                </path>
+            </g>
+            <g
+                stroke-dasharray="22"
+                stroke-dashoffset="22">
+                <path d="M10 3l-2 18">
+                    <animate
+                        fill="freeze"
+                        attributeName="stroke-dashoffset"
+                        begin="0.7s"
+                        dur="0.3s"
+                        to="0" />
+                </path>
+                <path d="M16 3l-2 18">
+                    <animate
+                        fill="freeze"
+                        attributeName="stroke-dashoffset"
+                        begin="1s"
+                        dur="0.3s"
+                        to="0" />
+                </path>
+            </g>
+        </g>
+    </svg>
+</template>

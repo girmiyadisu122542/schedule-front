@@ -1,0 +1,1077 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+/* Dark mode variant for Tailwind CSS v4 */
+@custom-variant dark (&:is(.dark *));
+
+/* Theme variables */
+@theme {
+    --font-*: initial;
+    --font-inter: 'Inter', sans-serif;
+
+    --breakpoint-2xsm: 375px;
+    --breakpoint-xsm: 425px;
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+    --breakpoint-3xl: 2000px;
+
+    --text-theme-xl: 20px;
+    --text-theme-xl--line-height: 30px;
+    --text-theme-sm: 14px;
+    --text-theme-sm--line-height: 20px;
+    --text-theme-xs: 12px;
+    --text-theme-xs--line-height: 18px;
+
+    --color-current: currentColor;
+    --color-transparent: transparent;
+    --color-white: #ffffff;
+    --color-black: #101828;
+    --color-schedule-dark-blue: #111184;
+
+    /* Schedule color codes */
+    /* Accent */
+    --color-schedule-accent-primary-fill-active: #9810fa;
+    --color-schedule-accent-primary-fill-default: #ad46ff;
+    --color-schedule-accent-primary-fill-disabled: #e9d4ff;
+    --color-schedule-accent-primary-fill-hover: #8200db;
+    --color-schedule-accent-primary-subtle-active: #e9d4ff;
+    --color-schedule-accent-primary-subtle-default: #e9d4ff;
+    --color-schedule-accent-primary-subtle-hover: #f3e8ff;
+    --color-schedule-accent-primary-surface-active: #f3e8ff;
+    --color-schedule-accent-primary-surface-default: #faf5ff;
+    --color-schedule-accent-primary-surface-hover: #f3e8ff;
+    --color-schedule-active: #e5e5e5;
+
+    /* Blue */
+    --color-schedule-brand-blue: #0b529c;
+    --color-schedule-brand-blue-hover: #0d457f;
+    --color-schedule-brand-blue-subtle: #e1eefd;
+    --color-schedule-brand-blue-subtle_2: #f1f7fe;
+    --color-schedule-brand-blue-surface: #f1f7fe;
+    --color-schedule-brand-blue-surface-hover: #e1eefd;
+    --color-schedule-disabled: #fafafa;
+    --color-schedule-brand-blue-primary: #0b529c;
+    --color-schedule-brand-blue-primary-hover: #0d457f;
+    --color-schedule-brand-blue-primary-subtle: #e1eefd;
+    --color-schedule-brand-blue-primary-surface: #f1f7fe;
+    --color-schedule-brand-blue-active: #e1eefd;
+
+    /* Error */
+    --color-schedule-error-default: #fb2c36;
+    --color-schedule-error-hover: #c10007;
+    --color-schedule-error-strong: #e7000b;
+    --color-schedule-error-subtle: #ffe2e2;
+    --color-schedule-error-surface: #fef2f2;
+    --color-schedule-error-surface-hover: #ffe2e2;
+    --color-schedule-error-hover: #f5f5f5;
+    --color-schedule-error-50: #fef2f2;
+    --color-schedule-error-100: #ffe2e2;
+    --color-schedule-error-300: #ffa2a2;
+    --color-schedule-error-500: #fb2c36;
+    --color-schedule-error-600: #e7000b;
+    --color-schedule-error-700: #c10007;
+
+    /* Info */
+    --color-schedule-info-default: #00a6f4;
+    --color-schedule-info-hover: #0069a8;
+    --color-schedule-info-strong: #0084d1;
+    --color-schedule-info-subtle: #dff2fe;
+    --color-schedule-info-surface: #f0f9ff;
+    --color-schedule-info-surface-hover: #dff2fe;
+    --color-schedule-info-50: #f0f9ff;
+    --color-schedule-info-100: #dff2fe;
+    --color-schedule-info-300: #74d4ff;
+    --color-schedule-info-500: #00a6f4;
+    --color-schedule-info-600: #0084d1;
+    --color-schedule-info-700: #0069a8;
+
+    /* Neutral */
+    --color-schedule-neutral-50: #fafafa;
+    --color-schedule-neutral-100: #f5f5f5;
+    --color-schedule-neutral-200: #e5e5e5;
+    --color-schedule-neutral-300: #d4d4d4;
+    --color-schedule-neutral-400: #a1a1a1;
+    --color-schedule-neutral-500: #737373;
+    --color-schedule-neutral-600: #525252;
+    --color-schedule-neutral-700: #404040;
+    --color-schedule-neutral-800: #262626;
+    --color-schedule-neutral-900: #171717;
+    --color-schedule-text-neutral: #535862;
+
+    /* Inverse */
+    --color-schedule-inverse: #171717;
+    --color-schedule-primary: #fafafa;
+    --color-schedule-secondary: #f5f5f5;
+    --color-schedule-selected: #f5f5f5;
+    --color-schedule-dark: #0f172a;
+    --color-schedule-dark-border: #3387d7;
+
+    /* Success */
+    --color-schedule-success-defult: #00bc7d;
+    --color-schedule-success-hover: #007a55;
+    --color-schedule-success-strong: #009966;
+    --color-schedule-success-subtle: #d0fae5;
+    --color-schedule-success-surface: #ecfdf5;
+    --color-schedule-success-surface-hover: #d0fae5;
+    --color-schedule-success-50: #ecfdf5;
+    --color-schedule-success-100: #d0fae5;
+    --color-schedule-success-300: #5ee9b5;
+    --color-schedule-success-500: #00bc7d;
+    --color-schedule-success-600: #009966;
+    --color-schedule-success-700: #007a55;
+
+    /* Surface */
+    --color-schedule-surface-elevated: #ffffff;
+    --color-schedule-surface-inverse: #171717;
+    --color-schedule-surface-subtle: #f5f5f5;
+    --color-schedule-surfae: #fafafa;
+    --color-schedule-tertiary: #e5e5e5;
+
+    /* Warning */
+    --color-schedule-warning-default: #fe9a00;
+    --color-schedule-warning-hover: #bb4d00;
+    --color-schedule-warning-strong: #e17100;
+    --color-schedule-warning-subtle: #fef3c6;
+    --color-schedule-warning-surface: #fffbeb;
+    --color-schedule-warning-50: #fffbeb;
+    --color-schedule-warning-100: #fef3c6;
+    --color-schedule-warning-300: #ffd230;
+    --color-schedule-warning-500: #fe9a00;
+    --color-schedule-warning-600: #e17100;
+    --color-schedule-warning-700: #bb4d00;
+    --color-schedule-warning-surface-hover: #fef3c6;
+    --color-schedule-brand-orange-primary: #fba81c;
+    --color-schedule-brand-orange-primary-hover: #f5880b;
+    --color-schedule-brand-orange-primary-subtle: #fff9eb;
+
+    /* Border */
+    --color-schedule-border-brand: #83bff6;
+    --color-schedule-border-brand-subtle: #bddbfa;
+    --color-schedule-border-error: #ffa2a2;
+    --color-schedule-border-error-strong: #fb2c36;
+    --color-schedule-border-info: #74d4ff;
+    --color-schedule-border-info-strong: #00a6f4;
+    --color-schedule-border-inverse: #404040;
+    --color-schedule-border-primary: #d4d4d4;
+    --color-schedule-border-subtle: #e5e5e5;
+    --color-schedule-border-success: #5ee9b5;
+    --color-schedule-border-success-strong: #00bc7d;
+    --color-schedule-border-warning: #ffd230;
+    --color-schedule-border-warning-strong: #fe9a00;
+
+    /* Generic */
+    --color-schedule-generic-black: #000000;
+    --color-schedule-generic-white: #ffffff;
+    --color-schedule-text-black: #181d27;
+
+    /* Icon */
+    --color-schedule-icon-brand: #0b529c;
+    --color-schedule-icon-disabled: #a1a1a1;
+    --color-schedule-icon-error: #e7000b;
+    --color-schedule-icon-info: #0084d1;
+    --color-schedule-icon-inverse: #f5f5f5;
+    --color-schedule-icon-on-action: #fafafa;
+    --color-schedule-icon-on-brand: #ffffff;
+    --color-schedule-icon-on-error: #ffffff;
+    --color-schedule-icon-on-info: #ffffff;
+    --color-schedule-icon-on-success: #ffffff;
+    --color-schedule-icon-on-surface: #262626;
+    --color-schedule-icon-on-warning: #ffffff;
+    --color-schedule-icon-primary: #262626;
+    --color-schedule-icon-secondary: #404040;
+    --color-schedule-icon-tertiary: #737373;
+    --color-schedule-icon-success: #009966;
+    --color-schedule-icon-warning: #e17100;
+
+    /* Text */
+    --color-schedule-text-accent-primary-default: #8200db;
+    --color-schedule-text-accent-primary-soft: #dab2ff;
+    --color-schedule-text-accent-primary-subtle: #ad46ff;
+    --color-schedule-text-brand-primary: #0b529c;
+    --color-schedule-text-brand-secondary: #83bff6;
+    --color-schedule-text-brand-tertiary: #bddbfa;
+    --color-schedule-text-disabled: #a1a1a1;
+    --color-schedule-text-error: #c10007;
+    --color-schedule-text-info: #0069a8;
+    --color-schedule-text-inverse: #f5f5f5;
+    --color-schedule-text-on-action: #fafafa;
+    --color-schedule-text-on-brand: #ffffff;
+    --color-schedule-text-on-error: #ffffff;
+    --color-schedule-text-on-info: #ffffff;
+    --color-schedule-text-on-success: #ffffff;
+    --color-schedule-text-on-surface: #262626;
+    --color-schedule-text-on-warning: #ffffff;
+    --color-schedule-text-primary: #262626;
+    --color-schedule-text-secondary: #404040;
+    --color-schedule-text-tertiary: #737373;
+    --color-schedule-text-success: #007a55;
+    --color-schedule-text-warning: #bb4d00;
+    --color-schedule-text-footer: #364153;
+    --color-schedule-gray-200: #e5e7eb;
+    /* Primary */
+    --color-primary-50: #e6f0fa;
+    --color-primary-100: #cce1f5;
+    --color-primary-200: #99c3eb;
+    --color-primary-300: #66a5e1;
+    --color-primary-400: #3387d7;
+    --color-primary-500: #0c539d;
+    --color-primary-600: #0a4787;
+    --color-primary-700: #083b71;
+    --color-primary-800: #062f5b;
+    --color-primary-900: #042345;
+
+    /* Secondary */
+    --color-secondary-50: #fdf6ed;
+    --color-secondary-100: #faecd6;
+    --color-secondary-200: #f5d9b0;
+    --color-secondary-300: #f0c68a;
+    --color-secondary-400: #eba364;
+    --color-secondary-500: #e5813e;
+    --color-secondary-600: #c46a32;
+    --color-secondary-700: #a15428;
+    --color-secondary-800: #7e3f1e;
+    --color-secondary-900: #5b2a14;
+
+    /* Gray */
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+    --color-gray-950: #030712;
+
+    /* =========================================================
+       The SINGLE source of truth for dark-mode-aware surfaces, borders, and text.
+
+       Components SHOULD reference these via Tailwind utilities:
+           bg-surface-page / bg-surface-card / bg-surface-elevated
+           bg-surface-subtle / bg-surface-muted / bg-surface-hover
+           border-border-default / border-border-subtle / border-border-strong
+           text-text-primary / text-text-secondary / text-text-tertiary
+           text-text-muted / text-text-inverse / text-text-on-brand
+
+       The VALUES come from --surface-* / --border-* / --text-*
+       CSS variables defined under :root (light) and .dark (dark).
+       Updating one variable updates every consumer in the app.
+       ========================================================= */
+    --color-surface-page: var(--surface-page);
+    --color-surface-card: var(--surface-card);
+    --color-surface-elevated: var(--surface-elevated);
+    --color-surface-subtle: var(--surface-subtle);
+    --color-surface-muted: var(--surface-muted);
+    --color-surface-hover: var(--surface-hover);
+    --color-surface-overlay: var(--surface-overlay);
+
+    --color-border-default: var(--border-default);
+    --color-border-subtle: var(--border-subtle);
+    --color-border-strong: var(--border-strong);
+    --color-border-focus: var(--border-focus);
+
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--text-secondary);
+    --color-text-tertiary: var(--text-tertiary);
+    --color-text-muted: var(--text-muted);
+    --color-text-inverse: var(--text-inverse);
+    --color-text-on-brand: var(--text-on-brand);
+}
+
+/* =============================================================
+   Light mode root
+   ----------------------------------------------------------------
+   --surface-*  / --border-*  / --text-*  are the SEMANTIC tokens
+   the whole app reads through Tailwind utilities like
+   `bg-surface-card` / `border-border-default` / `text-text-secondary`.
+
+   Light values use the existing neutral palette.  Dark values
+   (further down in `.dark`) use the slate palette from HomeView.vue
+   so login / modules list / dashboard / every reusable primitive
+   share one coherent dark theme.
+   ============================================================= */
+:root {
+    color-scheme: light;
+    --background-color: var(--color-white);
+    --text-color: var(--color-black);
+
+    --dropdown-bg: var(--color-primary-50);
+    --dropdown-text: var(--color-primary-500);
+    --dropdown-hover-bg: var(--color-primary-100);
+    --dropdown-active-bg: var(--color-primary-200);
+
+    --component-bg: var(--color-secondary-50);
+    --component-text: var(--color-secondary-700);
+    --component-border: var(--color-secondary-200);
+
+    --background: var(--color-white);
+    --foreground: var(--color-black);
+    --primary: var(--color-primary-500);
+    --secondary: var(--color-secondary-500);
+    --muted: var(--color-secondary-200);
+    --accent: var(--color-primary-400);
+    --destructive: var(--color-secondary-700);
+    --border: var(--color-secondary-200);
+    --input: var(--color-secondary-200);
+    --ring: var(--color-primary-300);
+    --radius: 0.75rem;
+
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: rgba(100, 116, 139, 0.4);
+    --scrollbar-thumb-hover: rgba(11, 82, 156, 0.7);
+
+    --transition-fast: 0.15s ease-in-out;
+    --transition-medium: 0.3s ease-in-out;
+    --transition-slow: 0.5s ease-in-out;
+
+    /* -----------------------------------------------------------
+       SEMANTIC SURFACES (light)
+       page      = body / app shell
+       card      = card / modal panel / table body
+       elevated  = header / sidebar / popover
+       subtle    = input field background, chip background
+       muted     = secondary panel (gray-50 strip)
+       hover     = row hover, button ghost hover
+       overlay   = soft tint over an existing surface
+       ----------------------------------------------------------- */
+    --surface-page: #ffffff;
+    --surface-card: #ffffff;
+    --surface-elevated: #ffffff;
+    --surface-subtle: #f3f4f6; /* gray-100 */
+    --surface-muted: #f9fafb; /* gray-50  */
+    --surface-hover: #f3f4f6; /* gray-100 */
+    --surface-overlay: rgba(15, 23, 42, 0.04);
+
+    /* SEMANTIC BORDERS (light) */
+    --border-default: #e5e7eb; /* gray-200 */
+    --border-subtle: #f3f4f6; /* gray-100 */
+    --border-strong: #d1d5db; /* gray-300 */
+    --border-focus: #0b529c; /* brand-blue */
+
+    /* SEMANTIC TEXT (light) */
+    --text-primary: #111827; /* gray-900 */
+    --text-secondary: #374151; /* gray-700 */
+    --text-tertiary: #6b7280; /* gray-500 */
+    --text-muted: #9ca3af; /* gray-400 */
+    --text-inverse: #ffffff; /* for use on dark chips / brand bg */
+    --text-on-brand: #ffffff;
+}
+
+/* =============================================================
+   Dark mode
+   ----------------------------------------------------------------
+   Values mirror the HomeView.vue design language:
+     - page background:   #0a0f1e
+     - card / modal:      slate-900  (#0f172a)
+     - elevated chrome:   slightly lifted slate (#111830)
+     - subtle / inputs:   slate-800  (#1e293b)
+     - border default:    slate-800  (#1e293b)
+     - border strong:     slate-700  (#334155)
+     - text primary:      slate-50   (#f8fafc) (near-white)
+     - text secondary:    slate-300  (#cbd5e1)
+     - text tertiary:     slate-400  (#94a3b8)
+   ============================================================= */
+.dark {
+    color-scheme: dark;
+    --background-color: #0a0f1e;
+    --text-color: #e8ecf4;
+
+    --dropdown-bg: #111830;
+    --dropdown-text: var(--color-primary-100);
+    --dropdown-hover-bg: #182040;
+    --dropdown-active-bg: var(--color-primary-700);
+
+    --component-bg: #111830;
+    --component-text: #d1d9e8;
+    --component-border: #1e2a4a;
+
+    --background: #0a0f1e;
+    --foreground: #e8ecf4;
+    --primary: #5b9cf5;
+    --secondary: #f0a060;
+    --muted: #3a4560;
+    --accent: #7db4ff;
+    --destructive: #f08050;
+    --border: #1e2a4a;
+    --input: #1e2a4a;
+    --ring: #3a6bc5;
+
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: rgba(148, 163, 184, 0.32);
+    --scrollbar-thumb-hover: rgba(91, 156, 245, 0.7);
+
+    /* SEMANTIC SURFACES (dark) -- HomeView.vue palette */
+    --surface-page: #0a0f1e;
+    --surface-card: #0f172a; /* slate-900  */
+    --surface-elevated: #111830; /* lifted     */
+    --surface-subtle: #1e293b; /* slate-800  */
+    --surface-muted: #111c33; /* between page and card */
+    --surface-hover: #1e293b; /* slate-800  */
+    --surface-overlay: rgba(255, 255, 255, 0.04);
+
+    /* SEMANTIC BORDERS (dark) */
+    --border-default: #1e293b; /* slate-800  */
+    --border-subtle: #1e2a4a;
+    --border-strong: #334155; /* slate-700  */
+    --border-focus: #5b9cf5;
+
+    /* SEMANTIC TEXT (dark) */
+    --text-primary: #f8fafc; /* slate-50   */
+    --text-secondary: #cbd5e1; /* slate-300  */
+    --text-tertiary: #94a3b8; /* slate-400  */
+    --text-muted: #64748b; /* slate-500  */
+    --text-inverse: #0f172a;
+    --text-on-brand: #ffffff;
+
+    /* Brand tints (dark) -- so tinted chips / badges / icon-frames don't
+       burn on slate cards. Subtle bg -> low-alpha brand; icon + strong
+       foregrounds -> lighter shades that hold contrast on the dark tint.
+       Light mode is unchanged; per-component dark: overrides still win. */
+    --color-schedule-brand-blue-subtle: rgba(91, 156, 245, 0.16);
+    --color-schedule-success-subtle: rgba(16, 185, 129, 0.16);
+    --color-schedule-warning-subtle: rgba(245, 158, 11, 0.16);
+    --color-schedule-error-subtle: rgba(248, 113, 113, 0.16);
+    --color-schedule-info-subtle: rgba(56, 189, 248, 0.16);
+
+    --color-schedule-icon-brand: #5b9cf5;
+    --color-schedule-icon-success: #34d399;
+    --color-schedule-icon-warning: #fbbf24;
+    --color-schedule-icon-error: #f87171;
+    --color-schedule-icon-info: #38bdf8;
+
+    --color-schedule-success-strong: #34d399;
+    --color-schedule-warning-strong: #fbbf24;
+    --color-schedule-error-strong: #f87171;
+    --color-schedule-info-strong: #38bdf8;
+}
+
+/* =============================================================
+   Reusable component classes
+   ----------------------------------------------------------------
+   For components / templates that don't want to enumerate the
+   four utility classes (`bg-surface-card border border-border-default
+   text-text-primary rounded-xl`) every time.  Apply via @apply-style
+   single class:  <div class="schedule-card">...</div>.
+   ============================================================= */
+@layer components {
+    /* Solid card / panel surface, used by Login card, ModuleList card,
+       and any other "I want a contained surface that flips with dark
+       mode" host.  Inherits border + radius + text color too. */
+    .schedule-card {
+        background-color: var(--surface-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-default);
+        border-radius: 0.75rem;
+    }
+
+    /* Header / sidebar chrome.  Slightly lifted in dark mode. */
+    .schedule-chrome {
+        background-color: var(--surface-elevated);
+        border-color: var(--border-default);
+        color: var(--text-primary);
+    }
+
+    /* Subtle inset surface -- input field bg, chip, code block. */
+    .schedule-subtle {
+        background-color: var(--surface-subtle);
+        color: var(--text-secondary);
+    }
+
+    /* Hover/active row indicator (table rows, list items). */
+    .schedule-row-hover:hover {
+        background-color: var(--surface-hover);
+    }
+
+    /* Token-driven text helpers (lets templates skip dark:text-* pairs). */
+    .schedule-text-primary {
+        color: var(--text-primary);
+    }
+    .schedule-text-secondary {
+        color: var(--text-secondary);
+    }
+    .schedule-text-tertiary {
+        color: var(--text-tertiary);
+    }
+    .schedule-text-muted {
+        color: var(--text-muted);
+    }
+}
+
+/* Schedule diamond background pattern -- subtle, tiled, SVG-encoded.
+   Inline SVG keeps the asset count down (no extra HTTP) and lets us flip
+   the stroke colour per theme. Used on the login surface. */
+.bg-schedule-pattern-diamonds {
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%230f172a' stroke-width='1' opacity='0.025'><path d='M60 0 L120 60 L60 120 L0 60 Z'/><path d='M60 12 L108 60 L60 108 L12 60 Z'/><path d='M60 24 L96 60 L60 96 L24 60 Z'/><path d='M60 36 L84 60 L60 84 L36 60 Z'/></g></svg>");
+    background-repeat: repeat;
+    background-size: 120px 120px;
+    background-position: center;
+}
+
+.dark .bg-schedule-pattern-diamonds {
+    background-color: #0f172a;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.02'><path d='M60 0 L120 60 L60 120 L0 60 Z'/><path d='M60 12 L108 60 L60 108 L12 60 Z'/><path d='M60 24 L96 60 L60 96 L24 60 Z'/><path d='M60 36 L84 60 L60 84 L36 60 Z'/></g></svg>");
+}
+
+/* Elevated variant used by modal panels (MainDialog) so the dialog
+   stays visually a notch ABOVE the patterned page in dark mode.
+   Same diamond glyph, slightly lifted base (#111830 instead of #0f172a)
+   and a touch more stroke contrast (3% instead of 2%) so the pattern
+   stays visible against the lifted bg. Light mode is unchanged. */
+.bg-schedule-pattern-diamonds-elevated {
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%230f172a' stroke-width='1' opacity='0.025'><path d='M60 0 L120 60 L60 120 L0 60 Z'/><path d='M60 12 L108 60 L60 108 L12 60 Z'/><path d='M60 24 L96 60 L60 96 L24 60 Z'/><path d='M60 36 L84 60 L60 84 L36 60 Z'/></g></svg>");
+    background-repeat: repeat;
+    background-size: 120px 120px;
+    background-position: center;
+}
+
+.dark .bg-schedule-pattern-diamonds-elevated {
+    background-color: #111830;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.03'><path d='M60 0 L120 60 L60 120 L0 60 Z'/><path d='M60 12 L108 60 L60 108 L12 60 Z'/><path d='M60 24 L96 60 L60 96 L24 60 Z'/><path d='M60 36 L84 60 L60 84 L36 60 Z'/></g></svg>");
+}
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+/* Tiny floating pill: a translucent neutral thumb inset by a transparent
+   border (padding-box clip), so it never touches the edge. Stays quiet by
+   default and brand-tints + thickens slightly on hover. */
+::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    background-color: var(--scrollbar-thumb);
+    min-height: 32px;
+    transition:
+        background-color var(--transition-fast),
+        border-width var(--transition-fast);
+}
+::-webkit-scrollbar-thumb:hover {
+    border-width: 1px;
+    background-color: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+/* Firefox: thin translucent thumb on a transparent track. */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+.scroll-container {
+    overflow: auto;
+    border-radius: 9999px;
+}
+
+/* Menu items (preserved) */
+.menu-item {
+    @apply text-theme-sm relative flex w-full items-center gap-3 rounded-lg px-3 py-1.5 font-medium transition-colors duration-300;
+}
+.menu-item-active {
+    @apply bg-primary-50 text-primary-500 dark:bg-primary-500/[0.15] dark:text-primary-400;
+}
+.menu-item-inactive {
+    @apply text-gray-700 group-hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-gray-100;
+}
+.menu-item-icon {
+    @apply text-gray-500 transition-colors duration-300 group-hover:text-gray-700 dark:text-gray-400;
+}
+.menu-item-icon-active {
+    @apply text-primary-500 dark:text-primary-400;
+}
+.menu-item-arrow {
+    @apply relative transition-transform duration-300;
+}
+.menu-item-arrow-active {
+    @apply text-primary-500 dark:text-primary-400 rotate-180;
+}
+.menu-item-arrow-inactive {
+    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
+}
+.menu-dropdown-item {
+    @apply text-theme-sm relative flex items-center rounded-lg px-3 py-1.5 font-medium transition-colors duration-300;
+}
+.menu-dropdown-item-active {
+    @apply bg-primary-50 text-primary-500 dark:bg-primary-500/[0.15] dark:text-primary-400;
+}
+.menu-dropdown-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10;
+}
+.menu-dropdown-badge {
+    @apply text-primary-500 dark:text-primary-400 block rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase;
+}
+.menu-dropdown-badge-active {
+    @apply bg-primary-100 dark:bg-primary-500/20;
+}
+.menu-dropdown-badge-inactive {
+    @apply bg-primary-50 group-hover:bg-primary-100 dark:bg-primary-500/15 dark:group-hover:bg-primary-500/20;
+}
+
+/* Typography */
+html,
+body,
+*:not([class^='fa'], [class*=' fa'], [class^='ph'], [class*=' ph']) {
+    font-family: var(--font-inter), 'Inter', sans-serif !important;
+    transition:
+        color var(--transition-medium),
+        background-color var(--transition-medium);
+}
+
+/* Scroll helpers */
+.no-scrollbar {
+    &::-webkit-scrollbar {
+        display: none;
+    }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.custom-scrollbar {
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    &::-webkit-scrollbar-track {
+        @apply rounded-full;
+    }
+    &::-webkit-scrollbar-thumb {
+        @apply rounded-full bg-gray-200 dark:bg-gray-700;
+    }
+}
+
+/* Sidebar hover enhancements */
+.sidebar {
+    transition: width var(--transition-medium);
+}
+.sidebar:hover {
+    width: 290px;
+}
+.sidebar:hover .logo {
+    display: block;
+}
+.sidebar:hover .logo-icon {
+    display: none;
+}
+.sidebar:hover .sidebar-header {
+    justify-content: space-between;
+}
+.sidebar:hover .menu-group-title {
+    display: block;
+}
+.sidebar:hover .menu-group-icon {
+    display: none;
+}
+.sidebar:hover .menu-item-text {
+    display: inline;
+}
+.sidebar:hover .menu-item-arrow {
+    display: block;
+}
+.sidebar:hover .menu-dropdown {
+    display: flex;
+}
+
+/* Rich text revert */
+.rich-text {
+    all: revert;
+}
+.rich-text * {
+    all: revert;
+}
+
+/* ======= Home Page Animations ======= */
+@keyframes float1 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+    33% {
+        transform: translate(30px, -50px) scale(1.05);
+    }
+    66% {
+        transform: translate(-20px, 20px) scale(0.95);
+    }
+}
+@keyframes float2 {
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    50% {
+        transform: translate(40px, -30px) rotate(10deg);
+    }
+}
+@keyframes float3 {
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+    25% {
+        transform: translate(-30px, 40px);
+    }
+    75% {
+        transform: translate(20px, -30px);
+    }
+}
+@keyframes pulse-dot {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.5);
+    }
+}
+.animate-float1 {
+    animation: float1 20s ease-in-out infinite;
+}
+.animate-float2 {
+    animation: float2 25s ease-in-out infinite;
+}
+.animate-float3 {
+    animation: float3 18s ease-in-out infinite;
+}
+.animate-float1-reverse {
+    animation: float1 22s ease-in-out infinite reverse;
+}
+.animate-pulse-dot {
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.hero-enter {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hero-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ======= Landing page animations (next-gen artistic hero/showcase) ======= */
+@keyframes blob {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+        border-radius: 42% 58% 60% 40% / 45% 50% 50% 55%;
+    }
+    33% {
+        transform: translate(24px, -32px) scale(1.08);
+        border-radius: 60% 40% 45% 55% / 55% 45% 60% 40%;
+    }
+    66% {
+        transform: translate(-20px, 18px) scale(0.94);
+        border-radius: 45% 55% 50% 50% / 60% 40% 55% 45%;
+    }
+}
+.animate-blob {
+    animation: blob 18s ease-in-out infinite;
+}
+
+@keyframes gradient-x {
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+.animate-gradient {
+    animation: gradient-x 6s ease infinite;
+}
+/* Network mesh -- flowing connection lines between entity nodes */
+@keyframes dash-flow {
+    to {
+        stroke-dashoffset: -44;
+    }
+}
+.animate-dashflow {
+    stroke-dasharray: 5 11;
+    animation: dash-flow 1.4s linear infinite;
+}
+@keyframes node-pulse {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.35);
+    }
+}
+.animate-node {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: node-pulse 3s ease-in-out infinite;
+}
+/* Scroll-reveal (toggled by the v-reveal directive) */
+.reveal {
+    opacity: 0;
+    transform: translateY(26px);
+    transition:
+        opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+.reveal-visible {
+    opacity: 1;
+    transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+/* Marquee (integrations strip) */
+@keyframes marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+.animate-marquee {
+    animation: marquee 32s linear infinite;
+}
+.marquee-paused:hover .animate-marquee {
+    animation-play-state: paused;
+}
+/* Ocean waves */
+@keyframes wave-x {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+.animate-wave {
+    animation: wave-x linear infinite;
+}
+@keyframes bubble-rise {
+    0% {
+        transform: translateY(0) scale(0.8);
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.6;
+    }
+    100% {
+        transform: translateY(-180px) scale(1.4);
+        opacity: 0;
+    }
+}
+.animate-bubble {
+    animation: bubble-rise ease-in infinite;
+}
+
+/* Orbit -- pause all spins while hovering the stage */
+.orbit-stage:hover .orbit-spin {
+    animation-play-state: paused;
+}
+/* Waterfall -- flowing streams + falling droplets */
+@keyframes stream-flow {
+    to {
+        background-position: 0 14px;
+    }
+}
+.animate-stream {
+    animation: stream-flow 0.9s linear infinite;
+}
+@keyframes droplet-fall {
+    0% {
+        transform: translate(-50%, -6px);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, 58px);
+        opacity: 0;
+    }
+}
+.animate-droplet {
+    animation: droplet-fall linear infinite;
+}
+@keyframes ripple-pulse {
+    0%,
+    100% {
+        transform: scaleX(0.6);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scaleX(1);
+        opacity: 0.9;
+    }
+}
+.animate-ripple {
+    animation: ripple-pulse 2.4s ease-in-out infinite;
+}
+/* Hero typewriter caret */
+@keyframes caret-blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+.animate-caret {
+    animation: caret-blink 1s step-end infinite;
+}
+/* Hero module node -- outer ring blow & shrink */
+@keyframes ring-breathe {
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(0.82);
+        opacity: 0.45;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.12);
+        opacity: 0.9;
+    }
+}
+.animate-ring-breathe {
+    animation: ring-breathe 3.4s ease-in-out infinite;
+}
+
+/* ============================================================
+   Landing UX enhancements
+   focus-visible · skip link · cursor spotlight · conic border
+   ============================================================ */
+
+/* Visible keyboard focus for all interactive elements (a11y). */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--color-schedule-brand-blue);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+/* Skip-to-content link: off-screen until it receives keyboard focus. */
+.skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 200;
+    transform: translateY(-160%);
+    background: var(--color-schedule-brand-blue);
+    color: #ffffff;
+    padding: 0.6rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease-out;
+}
+.skip-link:focus {
+    transform: translateY(0);
+    outline: none;
+}
+
+/* Cursor spotlight (v-spotlight sets --mx / --my). */
+.has-spotlight {
+    position: relative;
+    isolation: isolate;
+}
+.has-spotlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+        18rem circle at var(--mx, 50%) var(--my, 50%),
+        rgba(11, 82, 156, 0.14),
+        transparent 45%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+    pointer-events: none;
+}
+.has-spotlight:hover::before {
+    opacity: 1;
+}
+.dark .has-spotlight::before {
+    background: radial-gradient(
+        18rem circle at var(--mx, 50%) var(--my, 50%),
+        rgba(91, 156, 245, 0.18),
+        transparent 45%
+    );
+}
+
+/* Animated conic ring border (class .conic-border on a position:relative box).
+   A masked pseudo-element paints only the 1.5px edge, so it reads as a slowly
+   rotating brand-blue outline. The host should use border-transparent. */
+@property --schedule-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+@keyframes schedule-conic-spin {
+    to {
+        --schedule-angle: 360deg;
+    }
+}
+.conic-border {
+    position: relative;
+}
+.conic-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(
+        from var(--schedule-angle),
+        transparent 0deg,
+        var(--color-schedule-brand-blue) 90deg,
+        transparent 230deg,
+        transparent 360deg
+    );
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: schedule-conic-spin 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .conic-border::before {
+        animation: none;
+        background: var(--color-schedule-brand-blue);
+    }
+    .has-spotlight::before {
+        display: none;
+    }
+}
+
+/* Clickable affordance: pointer cursor on interactive elements (Tailwind v4 preflight drops it). */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+a[href],
+summary,
+label[for] {
+    cursor: pointer;
+}
