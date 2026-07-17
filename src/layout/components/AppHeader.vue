@@ -178,7 +178,7 @@ onUnmounted(() => {
 
                 <!-- Right: Actions -->
                 <div class="flex shrink-0 items-center gap-1.5">
-                    <FullscreenMenu class="text-text-tertiary" />
+                    <!-- <FullscreenMenu class="text-text-tertiary" /> -->
 
                     <ThemeToggle
                         :with-text="false"
@@ -186,12 +186,12 @@ onUnmounted(() => {
 
                     <!-- Language Dropdown -->
                     <div class="text-text-tertiary relative">
-                        <button
+                        <!-- <button
                             type="button"
                             @click="toggleLanguageDropdown"
                             class="language-dropdown-trigger text-text-tertiary hover:bg-surface-hover hover:text-text-primary flex h-10 w-10 items-center justify-center rounded-md transition-colors">
                             <i class="fa-solid fa-language text-lg"></i>
-                        </button>
+                        </button> -->
 
                         <div
                             v-if="languageDropdownOpen"
@@ -222,8 +222,8 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <Notification class="text-text-tertiary" />
-                    <VerticalLineIcon class="text-text-muted mx-1" />
+                    <!-- <Notification class="text-text-tertiary" /> -->
+                    <!-- <VerticalLineIcon class="text-text-muted mx-1" /> -->
 
                     <!-- User Menu -->
                     <UserMenu :force-expanded="true" />

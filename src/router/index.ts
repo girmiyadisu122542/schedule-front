@@ -1,4 +1,5 @@
 import userRoutes from '@/modules/user/router';
+import scheduleRoutes from '@/router/scheduleRoutes';
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useLanguageStore } from '@/stores/languageStore';
@@ -28,6 +29,7 @@ const router = createRouter({
             component: MainLayout,
             children: [
                 { path: 'dashboard', name: 'Dashboard', component: Dashboard },
+                ...scheduleRoutes,
                 ...userRoutes
             ]
         }

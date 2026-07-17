@@ -27,7 +27,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="text-text-primary min-h-screen">
+    <div class="text-text-primary bg-schedule-brand-blue-hover dark:bg-schedule-dark min-h-screen">
         <AppSidebar />
         <AppHeader :class="['transition-all delay-150 duration-150', isExpanded ? 'lg:pl-72' : 'lg:pl-20']" />
         <div

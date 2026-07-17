@@ -113,22 +113,21 @@ export function useUserMenu(options: UseUserMenuOptions = {}) {
     const isFloating = computed(() => showCollapsed.value && !options.onlyAvatar);
 
     const navLinks = computed(() => {
-        const contextual = isOnDashboard.value
-            ? {
-                  key: USER_MENU_KEY_MODULES,
-                  label: customizeLanguageData(USER_MENU_KEY_MODULES, USER_MENU_LABEL_MODULES),
-                  icon: markRaw(BoxIcon),
-                  to: MODULES_ROUTE
-              }
-            : {
-                  key: USER_MENU_KEY_DASHBOARD,
-                  label: customizeLanguageData(USER_MENU_KEY_DASHBOARD, USER_MENU_LABEL_DASHBOARD),
-                  icon: markRaw(GridIcon),
-                  to: dashboardPath.value
-              };
+        // const contextual = isOnDashboard.value
+        //     ? {
+        //           key: USER_MENU_KEY_DASHBOARD,
+        //           label: customizeLanguageData(USER_MENU_KEY_DASHBOARD, USER_MENU_LABEL_DASHBOARD),
+        //           icon: markRaw(GridIcon),
+        //           to: dashboardPath.value
+        //       }
+        //     : {
+        //           key: USER_MENU_KEY_MODULES,
+        //           label: customizeLanguageData(USER_MENU_KEY_MODULES, USER_MENU_LABEL_MODULES),
+        //           icon: markRaw(BoxIcon),
+        //           to: MODULES_ROUTE
+        //       };
 
         return [
-            contextual,
             {
                 key: USER_MENU_KEY_USER_PROFILE,
                 label: customizeLanguageData(USER_MENU_KEY_USER_PROFILE, USER_MENU_LABEL_USER_PROFILE),
@@ -161,8 +160,10 @@ export function useUserMenu(options: UseUserMenuOptions = {}) {
 
     const panelClass = computed(() => {
         if (isFloating.value) return 'user-menu-dropdown fixed z-9999 w-64';
-        if (options.onlyAvatar) return 'user-menu-dropdown absolute top-full right-0 mt-2 w-64';
-        return 'user-menu-dropdown absolute top-full left-0 mt-2 w-full';
+        // Inline (header avatar, force-expanded, or only-avatar): fixed-width panel
+        // anchored to the trigger's right edge so it drops below the avatar instead
+        // of collapsing to the narrow container width and covering the profile.
+        return 'user-menu-dropdown absolute top-full right-0 mt-2 w-64';
     });
 
     const getUserMenuPosition = () => {

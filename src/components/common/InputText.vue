@@ -129,7 +129,7 @@ const variantClasses = computed(() => {
     return 'placeholder:text-schedule-text-tertiary placeholder:text-base bg-schedule-generic-white dark:bg-gray-900 py-3.5 border border-schedule-border-primary dark:border-gray-700 text-schedule-text-primary text-base text-normal dark:text-white focus:ring-[1px] focus:text-schedule-text-primary focus:shadow-xs focus:shadow-schedule-border-brand focus:ring-schedule-border-brand focus:outline-none dark:focus:text-white/70 dark:focus:ring-primary-500/70 dark:focus:border-primary-500/70 dark:hover:border-primary-500/70 transition duration-200 ease-in-out';
 });
 
-const invalidClasses = computed(() => (invalid.value ? 'border-red-500' : ''));
+const invalidClasses = computed(() => (invalid.value ? 'border-red-500!' : ''));
 
 const inputClasses = computed(() => {
     return [
@@ -473,8 +473,8 @@ onUnmounted(() => {
             v-if="message"
             class="text-schedule-text-tertiary mt-1.5 text-xs font-normal"
             :class="{
-                'text-red-500': messageType === 'error',
-                'text-green-500': messageType === 'success'
+                'text-red-500!': messageType === 'error',
+                'text-green-500!': messageType === 'success'
             }">
             {{ message }}
         </p>

@@ -5,6 +5,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Close from '@/assets/icons/Close.vue';
 import Setting from '@/assets/icons/Setting.vue';
 import InfoIcon from '@/assets/icons/InfoIcon.vue';
+import SidebarOpen from '@/assets/icons/SidebarOpen.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
 import { useGetModules } from '@/composables/useModules';
@@ -20,7 +21,7 @@ const menuGroups = computed(() =>
         (a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER)
     )
 );
-const { isExpanded, isMobileOpen, openMenuPath, toggleMobileSidebar } = useSidebar();
+const { isExpanded, isMobileOpen, openMenuPath, toggleMobileSidebar, handleToggleSidebar } = useSidebar();
 const isCollapsed = computed(() => !isExpanded.value && !isMobileOpen.value);
 
 const { modules, fetchModules } = useGetModules();
@@ -181,10 +182,26 @@ watch(
                 }
             ]">
             <!-- Top Menu (Fixed) — height-matched to the header so the divider lines up -->
-            <div
+            <!-- <div
                 v-if="isExpanded || isMobileOpen"
                 class="flex h-16 items-end px-2">
                 <SidebarTopMenu class="w-full" />
+            </div> -->
+
+            <div
+                class="flex items-center gap-2 p-4"
+                :class="isCollapsed ? 'lg:justify-center' : 'justify-between'">
+                <div class="flex min-w-0 items-center gap-2.5">
+                    <img
+                        src="@/assets/logo.png"
+                        class="h-10 w-10 shrink-0 rounded-full object-cover" />
+                    <div
+                        v-if="isExpanded || isMobileOpen"
+                        class="flex min-w-0 flex-col leading-tight">
+                        <span class="text-schedule-icon-brand truncate text-lg font-bold">Wollo University</span>
+                        <span class="text-schedule-text-primary truncate text-sm font-bold">Scheduling System</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Close button (mobile only) -->
