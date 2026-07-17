@@ -83,18 +83,18 @@ const {
                             class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"></span>
                     </div>
                     <div class="min-w-0 text-left">
-                        <span
+                        <!-- <span
                             :class="[
                                 'block truncate text-sm font-semibold capitalize dark:text-gray-100',
                                 nameColor && !dropdownOpen ? nameColor : 'text-schedule-text-tertiary'
                             ]">
                             {{ user.fullName }}
-                        </span>
+                        </span> -->
                     </div>
                 </div>
-                <ArrowDownIcon
+                <!-- <ArrowDownIcon
                     class="ml-2 h-4 w-4 shrink-0 transition-transform duration-200"
-                    :class="dropdownOpen ? 'rotate-180' : ''" />
+                    :class="dropdownOpen ? 'rotate-180' : ''" /> -->
             </div>
         </div>
 
@@ -143,13 +143,6 @@ const {
                     <div class="border-border-subtle my-2 border-t"></div>
 
                     <!-- Upgrade subscription -->
-                    <router-link
-                        :to="upgradeRoute"
-                        @click="handleMenuClick(closeDropdown)"
-                        class="bg-schedule-brand-blue hover:bg-schedule-brand-blue-hover flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white transition-colors">
-                        <CrownIcon class="text-schedule-warning-default h-5 w-5 shrink-0" />
-                        <span>{{ labels.upgradeSubscription }}</span>
-                    </router-link>
 
                     <div class="border-border-subtle my-2 border-t"></div>
 

@@ -75,6 +75,11 @@ import ChefHat from '@/assets/icons/ChefHat.vue';
 import GridAlt from '@/assets/icons/GridAlt.vue';
 import Calendar from '@/assets/icons/Calendar.vue';
 import ListIcon from '@/assets/icons/ListIcon.vue';
+import KeyIcon from '@/assets/icons/KeyIcon.vue';
+import BookIcon from '@/assets/icons/BookIcon.vue';
+import BellIcon from '@/assets/icons/BellIcon.vue';
+import UserIcon from '@/assets/icons/UserIcon.vue';
+import SquarePenIcon from '@/assets/icons/SquarePenIcon.vue';
 import Utensils from '@/assets/icons/Utensils.vue';
 import FlameIcon from '@/assets/icons/FlameIcon.vue';
 import AlarmIcon from '@/assets/icons/AlarmIcon.vue';
@@ -95,6 +100,11 @@ export const useSidebarIconRegistry: Record<string, any> = {
     ClockTimeTimerArrow: ClockTimeTimerArrow,
     grid: GridIcon,
     Users: UsersIcon,
+    UserIcon: UserIcon,
+    BookIcon: BookIcon,
+    KeyIcon: KeyIcon,
+    BellIcon: BellIcon,
+    SquarePenIcon: SquarePenIcon,
     date: TravelDatesCalendar,
     mail: MailIcon,
     coin: CoinsIcon,

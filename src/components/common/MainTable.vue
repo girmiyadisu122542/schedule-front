@@ -770,7 +770,7 @@ onClickOutside(overflowMenuRef, () => {
                 <button
                     v-if="showAddButton"
                     @click="emit('add')"
-                    class="bg-schedule-brand-blue hover:bg-schedule-brand-blue-hover flex shrink-0 items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all">
+                    class="bg-schedule-brand-blue flex shrink-0 items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all">
                     <component
                         :is="addIcon"
                         v-if="addIcon"

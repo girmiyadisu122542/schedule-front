@@ -58,7 +58,7 @@ const iconOnlySizes: Record<ButtonSize, string> = {
 };
 
 const severities: Record<ButtonSeverity, string> = {
-    primary: 'bg-schedule-brand-blue text-white hover:bg-primary-600',
+    primary: 'bg-schedule-brand-blue text-white hover:bg-schedule-brand-blue-primary-hover',
     secondary: 'bg-surface-card text-text-secondary border-border-default hover:bg-surface-hover border',
     success: 'bg-green-500 text-white hover:bg-green-600',
     info: 'bg-cyan-500 text-white hover:bg-cyan-600',
