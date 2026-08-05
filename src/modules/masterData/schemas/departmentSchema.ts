@@ -6,10 +6,10 @@ import { useLanguageStore } from '@/stores/languageStore';
 import { MIN_NAME_LENGTH, MAX_NAME_LENGTH, MAX_CAMPUS_CODE_LENGTH } from '@/config/appConfig';
 
 /**
- * Reactive Zod factory for the college form. Bounds come from appConfig only —
- * they mirror the backend column widths in `Final Schema.md §3`.
+ * Reactive Zod factory for the department form. Bounds come from appConfig only —
+ * they mirror the backend column widths in `Final Schema.md §4`.
  */
-export const collegeSchema = () => {
+export const departmentSchema = () => {
     const { translations } = storeToRefs(useLanguageStore());
 
     return computed(() =>
@@ -30,9 +30,12 @@ export const collegeSchema = () => {
                     translations.value.codeIsTooLong || `Code must be at most ${MAX_CAMPUS_CODE_LENGTH} characters`
                 )
                 .transform((value) => value || null),
-            // A routing pointer, not an authorization source — optional because a
-            // college can sit vacant between deans.
-            dean_user_id: z.number().int().positive().nullable(),
+            college_id: z
+                .number({ message: translations.value.collegeIsRequired || 'Please choose a college' })
+                .int()
+                .positive(translations.value.collegeIsRequired || 'Please choose a college'),
+            // Routing pointer for the department-approval step — optional.
+            head_user_id: z.number().int().positive().nullable(),
             is_active: z.boolean()
         })
     );

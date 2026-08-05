@@ -8,14 +8,14 @@ import MainButton from '@/components/common/MainButton.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
 import { DROPDOWN_PARAM_KEY } from '@/config/appConfig';
-import type { CollegeForm } from '@/modules/masterData/types/college';
+import type { DepartmentForm } from '@/modules/masterData/types/department';
 import type { DropdownOption } from '@/types/CommonTypes';
 
 defineProps<{
     visible: boolean;
     isEditing: boolean;
     isSaving: boolean;
-    form: CollegeForm;
+    form: DepartmentForm;
     errors: Record<string, string>;
 }>();
 
@@ -24,10 +24,12 @@ const emit = defineEmits<{
     (event: 'save'): void;
 }>();
 
-const deanDropdown = useDropdownOptions<DropdownOption>('/user', { [DROPDOWN_PARAM_KEY]: true });
+const collegeDropdown = useDropdownOptions<DropdownOption>('/colleges', { [DROPDOWN_PARAM_KEY]: true });
+const headDropdown = useDropdownOptions<DropdownOption>('/user', { [DROPDOWN_PARAM_KEY]: true });
 
 onMounted(() => {
-    deanDropdown.fetchOptions();
+    collegeDropdown.fetchOptions();
+    headDropdown.fetchOptions();
 });
 </script>
 
@@ -36,20 +38,20 @@ onMounted(() => {
         :no-x-padding="true"
         :plain-background="true"
         :visible="visible"
-        :header="isEditing ? $lang.editCollege || 'Edit College' : $lang.createCollege || 'Create College'"
+        :header="isEditing ? $lang.editDepartment || 'Edit Department' : $lang.createDepartment || 'Create Department'"
         max-width="max-w-3xl"
         @update:visible="emit('update:visible', $event)">
         <div class="mx-4 space-y-7 py-1">
             <section class="space-y-4">
                 <h3 class="text-text-tertiary text-xs font-semibold tracking-wide uppercase">
-                    {{ $lang.collegeInformation || 'College Information' }}
+                    {{ $lang.departmentInformation || 'Department Information' }}
                 </h3>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <InputText
                         v-model="form.name"
                         :label="$lang.name || 'Name'"
-                        :placeholder="$lang.enterCollegeName || 'e.g. College of Engineering and Technology'"
+                        :placeholder="$lang.enterDepartmentName || 'e.g. Computer Science'"
                         :invalid="!!errors.name"
                         :message="errors.name"
                         message-type="error"
@@ -62,6 +64,22 @@ onMounted(() => {
                         :message="errors.code"
                         message-type="error"
                         size="normal" />
+                    <MainSelect
+                        v-model="form.college_id"
+                        :label-text="$lang.college || 'College'"
+                        :options="collegeDropdown.options.value"
+                        option-label="name"
+                        option-value="id"
+                        :placeholder="$lang.selectCollege || 'Select a college'"
+                        :invalid="!!errors.college_id"
+                        :message="errors.college_id"
+                        message-type="error"
+                        size="normal"
+                        is-required
+                        search
+                        show-refresh
+                        :loading="collegeDropdown.loading.value"
+                        @refresh="collegeDropdown.fetchOptions(true)" />
                 </div>
             </section>
 
@@ -71,25 +89,25 @@ onMounted(() => {
                 </h3>
 
                 <MainSelect
-                    v-model="form.dean_user_id"
-                    :label-text="$lang.dean || 'Dean'"
-                    :options="deanDropdown.options.value"
+                    v-model="form.head_user_id"
+                    :label-text="$lang.departmentHead || 'Department head'"
+                    :options="headDropdown.options.value"
                     option-label="full_name"
                     option-value="id"
-                    :placeholder="$lang.selectDean || 'Select the dean (optional)'"
-                    :invalid="!!errors.dean_user_id"
-                    :message="errors.dean_user_id"
+                    :placeholder="$lang.selectDepartmentHead || 'Select the head (optional)'"
+                    :invalid="!!errors.head_user_id"
+                    :message="errors.head_user_id"
                     message-type="error"
                     size="normal"
                     search
                     show-clear
                     show-refresh
-                    :loading="deanDropdown.loading.value"
+                    :loading="headDropdown.loading.value"
                     :helper-message="
-                        $lang.deanRoutingHint ||
-                        'Names who the college-approval step goes to. Permission to act as Dean still comes from the user\'s role.'
+                        $lang.headRoutingHint ||
+                        'Names who the department-approval step goes to. Permission to act still comes from the user\'s role.'
                     "
-                    @refresh="deanDropdown.fetchOptions(true)" />
+                    @refresh="headDropdown.fetchOptions(true)" />
 
                 <ToggleSwitch
                     v-model="form.is_active"

@@ -2,23 +2,23 @@
 import { computed, onMounted } from 'vue';
 
 import { useLanguageStore } from '@/stores/languageStore';
-import { useCollege } from '@/modules/masterData/composables/useCollege';
+import { useDepartment } from '@/modules/masterData/composables/useDepartment';
 
 import Badge from '@/components/common/Badge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
-import CollegeFormDialog from '@/modules/masterData/components/College/CollegeFormDialog.vue';
+import DepartmentFormDialog from '@/modules/masterData/components/Department/DepartmentFormDialog.vue';
 
-import BuildingCityIcon from '@/assets/icons/BuildingCityIcon.vue';
+import BuildingIcon from '@/assets/icons/BuildingIcon.vue';
 import { STATUS_SUCCESS, STATUS_LIGHT } from '@/config/appConfig';
-import type { College } from '@/modules/masterData/types/college';
+import type { Department } from '@/modules/masterData/types/department';
 
 const { customizeLanguageData } = useLanguageStore();
 const {
     isLoading,
-    colleges,
+    departments,
     tableColumns,
     filterFields,
     dialogVisible,
@@ -27,18 +27,18 @@ const {
     editErrors,
     isSavingEdit,
     confirmState,
-    fetchColleges,
+    fetchDepartments,
     handleSearch,
     handleFilterChange,
     getActionOptions,
     openCreateDialog,
-    saveCollegeForm
-} = useCollege();
+    saveDepartmentForm
+} = useDepartment();
 
-const breadcrumbItems = computed(() => [{ label: customizeLanguageData('collegesOrSchools', 'Colleges / Schools') }]);
+const breadcrumbItems = computed(() => [{ label: customizeLanguageData('departments', 'Departments') }]);
 
 onMounted(() => {
-    fetchColleges();
+    fetchDepartments();
 });
 </script>
 
@@ -47,71 +47,68 @@ onMounted(() => {
         <div class="pb-2">
             <Breadcrumb
                 :items="breadcrumbItems"
-                :icon="BuildingCityIcon" />
+                :icon="BuildingIcon" />
         </div>
 
         <div>
             <div class="mb-4">
                 <h1 class="text-text-primary text-xl font-semibold">
-                    {{ $lang.manageColleges || 'Manage Colleges / Schools' }}
+                    {{ $lang.manageDepartments || 'Manage Departments' }}
                 </h1>
                 <p class="text-md text-text-tertiary font-normal">
                     {{
-                        $lang.manageCollegesDesc ||
-                        'Colleges own departments and act as the College-Dean tier of the offering approval chain.'
+                        $lang.manageDepartmentsDesc ||
+                        'Departments own programs, courses, instructors and offerings, and act as the first two approval tiers.'
                     }}
                 </p>
             </div>
 
             <MainTable
                 :columns="tableColumns"
-                :items="colleges"
+                :items="departments"
                 :loading="isLoading"
                 :filter-fields="filterFields"
                 :server-side-filter="true"
                 css-clases="rounded-2xl"
-                :search-placeholder="$lang.searchColleges || 'Search colleges...'"
-                :show-add-button="$can('createCollege')"
+                :search-placeholder="$lang.searchDepartments || 'Search departments...'"
+                :show-add-button="$can('createDepartment')"
                 :show-refresh="true"
-                @refresh="fetchColleges"
+                @refresh="fetchDepartments"
                 @add="openCreateDialog"
                 @search="handleSearch"
                 @filter-change="handleFilterChange"
-                @update:currentPage="(page: number) => fetchColleges({ page })"
-                @update:limit="(value: number) => fetchColleges({ perPage: value })">
-                <template #cell-dean="{ item }">
-                    <span class="text-text-secondary">{{ (item as College).dean?.full_name || '—' }}</span>
+                @update:currentPage="(page: number) => fetchDepartments({ page })"
+                @update:limit="(value: number) => fetchDepartments({ perPage: value })">
+                <template #cell-college="{ item }">
+                    <span class="text-text-secondary">{{ (item as Department).college?.name || '—' }}</span>
                 </template>
 
-                <template #cell-departments_count="{ item }">
-                    <span
-                        class="bg-surface-subtle text-text-secondary inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium">
-                        {{ (item as College).departments_count ?? 0 }}
-                    </span>
+                <template #cell-head="{ item }">
+                    <span class="text-text-secondary">{{ (item as Department).head?.full_name || '—' }}</span>
                 </template>
 
                 <template #cell-is_active="{ item }">
                     <Badge
                         outlined
-                        :variant="(item as College).is_active ? STATUS_SUCCESS : STATUS_LIGHT"
+                        :variant="(item as Department).is_active ? STATUS_SUCCESS : STATUS_LIGHT"
                         :label="
-                            (item as College).is_active ? $lang.active || 'Active' : $lang.inactive || 'Inactive'
+                            (item as Department).is_active ? $lang.active || 'Active' : $lang.inactive || 'Inactive'
                         " />
                 </template>
 
                 <template #action="{ item }">
-                    <ActionMenu :options="getActionOptions(item as College)" />
+                    <ActionMenu :options="getActionOptions(item as Department)" />
                 </template>
             </MainTable>
         </div>
 
-        <CollegeFormDialog
+        <DepartmentFormDialog
             v-model:visible="dialogVisible"
             :is-editing="isEditingDialog"
             :is-saving="isSavingEdit"
             :form="editForm"
             :errors="editErrors"
-            @save="saveCollegeForm" />
+            @save="saveDepartmentForm" />
 
         <ConfirmDialog
             v-model:show="confirmState.show"

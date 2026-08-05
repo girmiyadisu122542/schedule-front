@@ -2,23 +2,22 @@
 import { computed, onMounted } from 'vue';
 
 import { useLanguageStore } from '@/stores/languageStore';
-import { useCollege } from '@/modules/masterData/composables/useCollege';
+import { useAcademicYear } from '@/modules/masterData/composables/useAcademicYear';
 
-import Badge from '@/components/common/Badge.vue';
+import BoolChip from '@/components/common/BoolChip.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
-import CollegeFormDialog from '@/modules/masterData/components/College/CollegeFormDialog.vue';
+import AcademicYearFormDialog from '@/modules/masterData/components/AcademicYear/AcademicYearFormDialog.vue';
 
-import BuildingCityIcon from '@/assets/icons/BuildingCityIcon.vue';
-import { STATUS_SUCCESS, STATUS_LIGHT } from '@/config/appConfig';
-import type { College } from '@/modules/masterData/types/college';
+import Calendar from '@/assets/icons/Calendar.vue';
+import type { AcademicYear } from '@/modules/masterData/types/academicYear';
 
 const { customizeLanguageData } = useLanguageStore();
 const {
     isLoading,
-    colleges,
+    academicYears,
     tableColumns,
     filterFields,
     dialogVisible,
@@ -27,18 +26,18 @@ const {
     editErrors,
     isSavingEdit,
     confirmState,
-    fetchColleges,
+    fetchAcademicYears,
     handleSearch,
     handleFilterChange,
     getActionOptions,
     openCreateDialog,
-    saveCollegeForm
-} = useCollege();
+    saveAcademicYearForm
+} = useAcademicYear();
 
-const breadcrumbItems = computed(() => [{ label: customizeLanguageData('collegesOrSchools', 'Colleges / Schools') }]);
+const breadcrumbItems = computed(() => [{ label: customizeLanguageData('academicYears', 'Academic Years') }]);
 
 onMounted(() => {
-    fetchColleges();
+    fetchAcademicYears();
 });
 </script>
 
@@ -47,71 +46,55 @@ onMounted(() => {
         <div class="pb-2">
             <Breadcrumb
                 :items="breadcrumbItems"
-                :icon="BuildingCityIcon" />
+                :icon="Calendar" />
         </div>
 
         <div>
             <div class="mb-4">
                 <h1 class="text-text-primary text-xl font-semibold">
-                    {{ $lang.manageColleges || 'Manage Colleges / Schools' }}
+                    {{ $lang.manageAcademicYears || 'Manage Academic Years' }}
                 </h1>
                 <p class="text-md text-text-tertiary font-normal">
                     {{
-                        $lang.manageCollegesDesc ||
-                        'Colleges own departments and act as the College-Dean tier of the offering approval chain.'
+                        $lang.manageAcademicYearsDesc ||
+                        'Academic years group semesters and scope student cohorts. Exactly one year is current at a time.'
                     }}
                 </p>
             </div>
 
             <MainTable
                 :columns="tableColumns"
-                :items="colleges"
+                :items="academicYears"
                 :loading="isLoading"
                 :filter-fields="filterFields"
                 :server-side-filter="true"
                 css-clases="rounded-2xl"
-                :search-placeholder="$lang.searchColleges || 'Search colleges...'"
-                :show-add-button="$can('createCollege')"
+                :search-placeholder="$lang.searchAcademicYears || 'Search academic years...'"
+                :show-add-button="$can('createAcademicYear')"
                 :show-refresh="true"
-                @refresh="fetchColleges"
+                @refresh="fetchAcademicYears"
                 @add="openCreateDialog"
                 @search="handleSearch"
                 @filter-change="handleFilterChange"
-                @update:currentPage="(page: number) => fetchColleges({ page })"
-                @update:limit="(value: number) => fetchColleges({ perPage: value })">
-                <template #cell-dean="{ item }">
-                    <span class="text-text-secondary">{{ (item as College).dean?.full_name || '—' }}</span>
-                </template>
-
-                <template #cell-departments_count="{ item }">
-                    <span
-                        class="bg-surface-subtle text-text-secondary inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium">
-                        {{ (item as College).departments_count ?? 0 }}
-                    </span>
-                </template>
-
-                <template #cell-is_active="{ item }">
-                    <Badge
-                        outlined
-                        :variant="(item as College).is_active ? STATUS_SUCCESS : STATUS_LIGHT"
-                        :label="
-                            (item as College).is_active ? $lang.active || 'Active' : $lang.inactive || 'Inactive'
-                        " />
+                @update:currentPage="(page: number) => fetchAcademicYears({ page })"
+                @update:limit="(value: number) => fetchAcademicYears({ perPage: value })">
+                <template #cell-is_current="{ item }">
+                    <BoolChip :value="(item as AcademicYear).is_current" />
                 </template>
 
                 <template #action="{ item }">
-                    <ActionMenu :options="getActionOptions(item as College)" />
+                    <ActionMenu :options="getActionOptions(item as AcademicYear)" />
                 </template>
             </MainTable>
         </div>
 
-        <CollegeFormDialog
+        <AcademicYearFormDialog
             v-model:visible="dialogVisible"
             :is-editing="isEditingDialog"
             :is-saving="isSavingEdit"
             :form="editForm"
             :errors="editErrors"
-            @save="saveCollegeForm" />
+            @save="saveAcademicYearForm" />
 
         <ConfirmDialog
             v-model:show="confirmState.show"

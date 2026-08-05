@@ -7,15 +7,17 @@ import MainSelect from '@/components/common/MainSelect.vue';
 import MainButton from '@/components/common/MainButton.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
+import { useLookupValues } from '@/composables/useLookupValues';
 import { DROPDOWN_PARAM_KEY } from '@/config/appConfig';
-import type { CollegeForm } from '@/modules/masterData/types/college';
+import { LOOKUP_TYPE } from '@/modules/masterData/constants/lookupTypes';
+import type { ProgramForm } from '@/modules/masterData/types/program';
 import type { DropdownOption } from '@/types/CommonTypes';
 
 defineProps<{
     visible: boolean;
     isEditing: boolean;
     isSaving: boolean;
-    form: CollegeForm;
+    form: ProgramForm;
     errors: Record<string, string>;
 }>();
 
@@ -24,10 +26,11 @@ const emit = defineEmits<{
     (event: 'save'): void;
 }>();
 
-const deanDropdown = useDropdownOptions<DropdownOption>('/user', { [DROPDOWN_PARAM_KEY]: true });
+const departmentDropdown = useDropdownOptions<DropdownOption>('/departments', { [DROPDOWN_PARAM_KEY]: true });
+const degreeLevels = useLookupValues(LOOKUP_TYPE.DEGREE_LEVEL);
 
 onMounted(() => {
-    deanDropdown.fetchOptions();
+    departmentDropdown.fetchOptions();
 });
 </script>
 
@@ -36,20 +39,20 @@ onMounted(() => {
         :no-x-padding="true"
         :plain-background="true"
         :visible="visible"
-        :header="isEditing ? $lang.editCollege || 'Edit College' : $lang.createCollege || 'Create College'"
+        :header="isEditing ? $lang.editProgram || 'Edit Program' : $lang.createProgram || 'Create Program'"
         max-width="max-w-3xl"
         @update:visible="emit('update:visible', $event)">
         <div class="mx-4 space-y-7 py-1">
             <section class="space-y-4">
                 <h3 class="text-text-tertiary text-xs font-semibold tracking-wide uppercase">
-                    {{ $lang.collegeInformation || 'College Information' }}
+                    {{ $lang.programInformation || 'Program Information' }}
                 </h3>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <InputText
                         v-model="form.name"
                         :label="$lang.name || 'Name'"
-                        :placeholder="$lang.enterCollegeName || 'e.g. College of Engineering and Technology'"
+                        :placeholder="$lang.enterProgramName || 'e.g. BSc in Computer Science'"
                         :invalid="!!errors.name"
                         :message="errors.name"
                         message-type="error"
@@ -62,35 +65,47 @@ onMounted(() => {
                         :message="errors.code"
                         message-type="error"
                         size="normal" />
+                    <MainSelect
+                        v-model="form.department_id"
+                        :label-text="$lang.department || 'Department'"
+                        :options="departmentDropdown.options.value"
+                        option-label="name"
+                        option-value="id"
+                        :placeholder="$lang.selectDepartment || 'Select a department'"
+                        :invalid="!!errors.department_id"
+                        :message="errors.department_id"
+                        message-type="error"
+                        size="normal"
+                        is-required
+                        search
+                        show-refresh
+                        :loading="departmentDropdown.loading.value"
+                        @refresh="departmentDropdown.fetchOptions(true)" />
+                    <MainSelect
+                        v-model="form.degree_level_lookup_value_id"
+                        :label-text="$lang.degreeLevel || 'Degree level'"
+                        :options="degreeLevels.options.value"
+                        option-label="name"
+                        option-value="id"
+                        :placeholder="$lang.selectDegreeLevel || 'Select a degree level'"
+                        :invalid="!!errors.degree_level_lookup_value_id"
+                        :message="errors.degree_level_lookup_value_id"
+                        message-type="error"
+                        size="normal"
+                        is-required
+                        :loading="degreeLevels.loading.value" />
+                    <InputText
+                        v-model="form.duration_years"
+                        :label="$lang.durationYears || 'Duration (years)'"
+                        :placeholder="$lang.enterDurationYears || 'e.g. 4'"
+                        :invalid="!!errors.duration_years"
+                        :message="errors.duration_years"
+                        message-type="error"
+                        size="normal" />
                 </div>
             </section>
 
             <section class="border-border-subtle space-y-4 border-t pt-6">
-                <h3 class="text-text-tertiary text-xs font-semibold tracking-wide uppercase">
-                    {{ $lang.approvalRouting || 'Approval Routing' }}
-                </h3>
-
-                <MainSelect
-                    v-model="form.dean_user_id"
-                    :label-text="$lang.dean || 'Dean'"
-                    :options="deanDropdown.options.value"
-                    option-label="full_name"
-                    option-value="id"
-                    :placeholder="$lang.selectDean || 'Select the dean (optional)'"
-                    :invalid="!!errors.dean_user_id"
-                    :message="errors.dean_user_id"
-                    message-type="error"
-                    size="normal"
-                    search
-                    show-clear
-                    show-refresh
-                    :loading="deanDropdown.loading.value"
-                    :helper-message="
-                        $lang.deanRoutingHint ||
-                        'Names who the college-approval step goes to. Permission to act as Dean still comes from the user\'s role.'
-                    "
-                    @refresh="deanDropdown.fetchOptions(true)" />
-
                 <ToggleSwitch
                     v-model="form.is_active"
                     :label="$lang.active || 'Active'"
