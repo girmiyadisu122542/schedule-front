@@ -50,7 +50,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="bg-schedule-generic-white dark:bg-schedule-dark border-schedule-border-subtle mb-5 rounded-xl border p-5">
+    <div class="bg-surface-card border-border-default mb-5 rounded-xl border p-5">
         <div class="items-center space-x-2 md:flex">
             <FieldWrapper
                 :label="$lang.from"

@@ -65,7 +65,7 @@ onMounted(() => {
             <span
                 v-for="apply in item.applies_to_model"
                 :key="apply"
-                class="text-schedule-text-primary dark:text-schedule-tertiary mr-2 space-x-2 text-sm">
+                class="text-text-primary mr-2 space-x-2 text-sm">
                 {{ apply.charAt(0).toUpperCase() + apply.slice(1).toLowerCase() }}
             </span>
         </template>
