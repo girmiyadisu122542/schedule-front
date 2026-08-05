@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, watch, computed, ref } from 'vue';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
+import type { AnyExtension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { Underline } from '@tiptap/extension-underline';
 import { Link } from '@tiptap/extension-link';
@@ -49,7 +50,9 @@ const editor = useEditor({
         FontFamily,
         Color,
         Highlight.configure({ multicolor: true }),
-        FontSize,
+        // tiptap-extension-font-size bundles its own @tiptap/core types, so its
+        // Extension generic is structurally distinct from the one StarterKit uses.
+        FontSize as unknown as AnyExtension,
         Table.configure({ resizable: true }),
         TableRow,
         TableHeader,
@@ -71,7 +74,7 @@ const convertToHex = (color: string | undefined): string => {
     if (color.startsWith('#')) return color;
     const rgba = color.match(/\d+/g);
     if (rgba) {
-        return '#' + [0, 1, 2].map((i) => parseInt(rgba[i]).toString(16).padStart(2, '0')).join('');
+        return '#' + [0, 1, 2].map((index) => parseInt(rgba[index] ?? '0').toString(16).padStart(2, '0')).join('');
     }
     return '#000000';
 };
@@ -104,7 +107,7 @@ watch(
     () => props.modelValue,
     (newValue: string | undefined) => {
         if (editor.value?.getHTML() === newValue) return;
-        editor.value?.commands.setContent(newValue, false);
+        editor.value?.commands.setContent(newValue ?? '', { emitUpdate: false });
     }
 );
 
@@ -159,10 +162,10 @@ const startResize = (e: MouseEvent): void => {
                 @change="
                     (e) => {
                         const level = (e.target as HTMLSelectElement).value;
-                        if (level === '0') editor.chain().focus().setParagraph().run();
+                        if (level === '0') editor?.chain().focus().setParagraph().run();
                         else
                             editor
-                                .chain()
+                                ?.chain()
                                 .focus()
                                 .toggleHeading({ level: parseInt(level) as 1 | 2 | 3 })
                                 .run();

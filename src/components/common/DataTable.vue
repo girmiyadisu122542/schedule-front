@@ -180,6 +180,14 @@ const pageNumbers = computed(() => {
     return pages;
 });
 
+/**
+ * First / last entries of `pageNumbers`, guarded. The ellipsis conditions below
+ * index the array directly, which `noUncheckedIndexedAccess` widens to
+ * `number | undefined`; an empty page list simply reads as page 0 and hides them.
+ */
+const firstPageNumber = computed(() => pageNumbers.value[0] ?? 0);
+const lastPageNumber = computed(() => pageNumbers.value[pageNumbers.value.length - 1] ?? 0);
+
 const sortedItems = computed<Item[]>(() => {
     let arr: Item[] = props.items?.data ? [...props.items.data] : [];
 
@@ -592,7 +600,7 @@ function toggleColumn(field: string) {
 
                 <!-- Left Ellipsis -->
                 <span
-                    v-if="pageNumbers.length > 0 && pageNumbers[0] > 2"
+                    v-if="pageNumbers.length > 0 && firstPageNumber > 2"
                     class="cursor-pointer border-r border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
                     ...
                 </span>
@@ -605,7 +613,7 @@ function toggleColumn(field: string) {
                     :class="[
                         'cursor-pointer px-3 py-2 text-sm font-medium transition-all',
                         index < pageNumbers.length - 1 ||
-                        pageNumbers[pageNumbers.length - 1] < props.items.pagination.last_page - 1 ||
+                        lastPageNumber < props.items.pagination.last_page - 1 ||
                         !pageNumbers.includes(props.items.pagination.last_page)
                             ? 'border-r border-gray-300 dark:border-gray-600'
                             : '',
@@ -620,7 +628,7 @@ function toggleColumn(field: string) {
                 <span
                     v-if="
                         pageNumbers.length > 0 &&
-                        pageNumbers[pageNumbers.length - 1] < props.items.pagination.last_page - 1
+                        lastPageNumber < props.items.pagination.last_page - 1
                     "
                     class="border-r border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
                     ...

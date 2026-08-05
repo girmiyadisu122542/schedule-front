@@ -46,7 +46,10 @@ const badgeClasses = computed(() => {
         [BADGE_SEVERITY.INFO]: 'bg-cyan-100 text-cyan-700',
         [BADGE_SEVERITY.WARN]: 'bg-yellow-100 text-yellow-700',
         [BADGE_SEVERITY.DANGER]: 'bg-red-100 text-red-700',
-        [BADGE_SEVERITY.CONTRAST]: 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
+        [BADGE_SEVERITY.CONTRAST]: 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900',
+        // 'bar' is a ToggleSwitch layout variant, not a badge look — a badge
+        // rendered with it falls back to the neutral secondary styling.
+        [BADGE_SEVERITY.BAR]: 'bg-gray-100 text-gray-700'
     };
 
     const sizeClasses = {

@@ -87,6 +87,9 @@ import DiningTable from '@/assets/icons/DiningTable.vue';
 import CashRegister from '@/assets/icons/CashRegister.vue';
 import ClockTimeTimerArrow from '@/assets/icons/ClockTimeTimerArrow.vue';
 
+import MapPin from '@/assets/icons/MapPin.vue';
+import ShieldCheckAltIcon from '@/assets/icons/ShieldCheckAltIcon.vue';
+
 export const useSidebarIconRegistry: Record<string, any> = {
     Utensils: Utensils,
     CashRegister: CashRegister,
@@ -173,5 +176,7 @@ export const useSidebarIconRegistry: Record<string, any> = {
     PackageBoxPinLocation: PackageBoxPinLocation,
     InvoiceAddPlus: InvoiceAddPlus,
     CalanderScheduleDiscount: CalendarScheduleDiscount,
-    ShipmentDeliveryIcon: ShipmentDeliveryIcon
+    ShipmentDeliveryIcon: ShipmentDeliveryIcon,
+    MapPin: MapPin,
+    ShieldCheckAltIcon: ShieldCheckAltIcon,
 };

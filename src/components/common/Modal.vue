@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
+import { BADGE_SEVERITY } from '@/config/appConfig';
+
 import Editor from '@/components/common/Editor.vue';
 import CheckBox from '@/components/common/CheckBox.vue';
 import InputText from '@/components/common/InputText.vue';
@@ -296,7 +298,7 @@ const updateCoords = (field: FormField, coords: { lat: string; lng: string }) =>
                         <div class="relative">
                             <ToggleSwitch
                                 :label="field.label"
-                                :variant="field.variant || 'bar'"
+                                :variant="field.variant === 'bar' ? BADGE_SEVERITY.BAR : undefined"
                                 :modelValue="!!formData[field.key]"
                                 @update:modelValue="
                                     (val) => {
