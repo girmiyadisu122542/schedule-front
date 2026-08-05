@@ -1,39 +1,32 @@
-import type { Pagination } from '@/types/CommonTypes';
+import type { Pagination, User } from '@/types/CommonTypes';
 
 /**
- * College / School master-data model.
+ * College master-data record as `GET /colleges` emits it (backend
+ * `App\Models\Academic\College::indexFields`).
  *
- * NOTE: the backend migration/API is not implemented yet — this shape is an
- * educated guess at what a university college/school record holds. Adjust the
- * fields here (and the schema + form) once the real migration lands.
+ * `dean_user_id` is a routing pointer — it names who the college-approval step
+ * goes to. It is NOT the authorization source; whether a user may act as Dean is
+ * an RBAC question answered by roles/permissions.
  */
 export interface College {
     id: number;
-    name: string;
-    /** Short unique identifier, e.g. "COE" for College of Engineering. */
+    uuid: string;
     code: string;
-    description?: string | null;
-    /** Head of the college / school. */
-    dean_name?: string | null;
-    email?: string | null;
-    phone?: string | null;
-    established_year?: number | null;
-    state: number;
-    /** Read-only rollup surfaced by the backend. */
-    departments_count?: number;
+    name: string;
+    dean_user_id: number | null;
+    is_active: boolean;
+    departments_count: number | null;
+    dean?: User | null;
+    created_by?: User | null;
     created_at?: string;
-    [key: string]: any;
 }
 
+/** Form model — a single `name` string on the wire, never `{en, am}`. */
 export interface CollegeForm {
     name: string;
     code: string;
-    description: string;
-    dean_name: string;
-    email: string;
-    phone: string;
-    established_year: string;
-    state: number;
+    dean_user_id: number | null;
+    is_active: boolean;
 }
 
 export interface PaginatedColleges {

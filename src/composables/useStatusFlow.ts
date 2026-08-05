@@ -44,12 +44,26 @@ export function useStatusFlow(typeCode: string) {
         return codes.length > 0;
     }
 
+    /**
+     * Load both feeds now.
+     *
+     * The underlying `useDropdownOptions` auto-fetches from its own `onMounted`,
+     * which never fires when this composable is created inside a
+     * `createSharedComposable` — that runs its body in a detached effect scope
+     * with no current component instance. Any caller in that position (an entity
+     * composable, say) must call this from its view's `onMounted` instead.
+     */
+    async function refetch(): Promise<void> {
+        await Promise.all([lookup.refetch(), transitionsApi.refetch()]);
+    }
+
     return {
         loading,
         statuses,
         transitions: transitionsApi.transitions,
         resolve: lookup.resolve,
         allowedTargets,
-        hasOutgoing
+        hasOutgoing,
+        refetch
     };
 }

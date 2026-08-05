@@ -1,9 +1,15 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
+
 import MainDialog from '@/components/common/MainDialog.vue';
 import InputText from '@/components/common/InputText.vue';
+import MainSelect from '@/components/common/MainSelect.vue';
 import MainButton from '@/components/common/MainButton.vue';
-import FieldWrapper from '@/components/wrapper/FieldWrapper.vue';
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import { useDropdownOptions } from '@/composables/useDropdownOptions';
+import { DROPDOWN_PARAM_KEY } from '@/config/appConfig';
 import type { CollegeForm } from '@/modules/masterData/types/college';
+import type { DropdownOption } from '@/types/CommonTypes';
 
 defineProps<{
     visible: boolean;
@@ -14,9 +20,15 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-    (e: 'update:visible', val: boolean): void;
-    (e: 'save'): void;
+    (event: 'update:visible', value: boolean): void;
+    (event: 'save'): void;
 }>();
+
+const deanDropdown = useDropdownOptions<DropdownOption>('/user', { [DROPDOWN_PARAM_KEY]: true });
+
+onMounted(() => {
+    deanDropdown.fetchOptions();
+});
 </script>
 
 <template>
@@ -37,7 +49,7 @@ const emit = defineEmits<{
                     <InputText
                         v-model="form.name"
                         :label="$lang.name || 'Name'"
-                        :placeholder="$lang.enterCollegeName || 'e.g. College of Engineering'"
+                        :placeholder="$lang.enterCollegeName || 'e.g. College of Engineering and Technology'"
                         :invalid="!!errors.name"
                         :message="errors.name"
                         message-type="error"
@@ -45,63 +57,44 @@ const emit = defineEmits<{
                     <InputText
                         v-model="form.code"
                         :label="$lang.code || 'Code'"
-                        :placeholder="$lang.enterCollegeCode || 'e.g. COE'"
+                        :placeholder="$lang.leaveBlankToAutoGenerate || 'Leave blank to auto-generate'"
                         :invalid="!!errors.code"
                         :message="errors.code"
                         message-type="error"
                         size="normal" />
                 </div>
-
-                <FieldWrapper
-                    :label="$lang.description || 'Description'"
-                    :required="false">
-                    <textarea
-                        v-model="form.description"
-                        rows="3"
-                        :placeholder="$lang.enterDescription || 'Enter a description...'"
-                        class="border-border-default text-text-primary placeholder:text-text-tertiary focus:border-schedule-brand-blue focus:ring-schedule-brand-blue/20 w-full rounded-lg border bg-transparent px-3 py-2 text-sm focus:ring-2 focus:outline-none"></textarea>
-                </FieldWrapper>
             </section>
 
             <section class="border-border-subtle space-y-4 border-t pt-6">
                 <h3 class="text-text-tertiary text-xs font-semibold tracking-wide uppercase">
-                    {{ $lang.contactAndDetails || 'Contact & Details' }}
+                    {{ $lang.approvalRouting || 'Approval Routing' }}
                 </h3>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <InputText
-                        v-model="form.dean_name"
-                        :label="$lang.dean || 'Dean'"
-                        :placeholder="$lang.enterDeanName || 'Head of the college'"
-                        :invalid="!!errors.dean_name"
-                        :message="errors.dean_name"
-                        message-type="error"
-                        size="normal" />
-                    <InputText
-                        v-model="form.established_year"
-                        :label="$lang.establishedYear || 'Established Year'"
-                        :placeholder="'e.g. 1998'"
-                        :invalid="!!errors.established_year"
-                        :message="errors.established_year"
-                        message-type="error"
-                        size="normal" />
-                    <InputText
-                        v-model="form.email"
-                        :label="$lang.email || 'Email'"
-                        :placeholder="$lang.enterEmail || 'college@university.edu'"
-                        :invalid="!!errors.email"
-                        :message="errors.email"
-                        message-type="error"
-                        size="normal" />
-                    <InputText
-                        v-model="form.phone"
-                        :label="$lang.phone || 'Phone'"
-                        :placeholder="$lang.enterPhone || 'Phone number'"
-                        :invalid="!!errors.phone"
-                        :message="errors.phone"
-                        message-type="error"
-                        size="normal" />
-                </div>
+                <MainSelect
+                    v-model="form.dean_user_id"
+                    :label-text="$lang.dean || 'Dean'"
+                    :options="deanDropdown.options.value"
+                    option-label="full_name"
+                    option-value="id"
+                    :placeholder="$lang.selectDean || 'Select the dean (optional)'"
+                    :invalid="!!errors.dean_user_id"
+                    :message="errors.dean_user_id"
+                    message-type="error"
+                    size="normal"
+                    search
+                    show-clear
+                    show-refresh
+                    :loading="deanDropdown.loading.value"
+                    :helper-message="
+                        $lang.deanRoutingHint ||
+                        'Names who the college-approval step goes to. Permission to act as Dean still comes from the user\'s role.'
+                    "
+                    @refresh="deanDropdown.fetchOptions(true)" />
+
+                <ToggleSwitch
+                    v-model="form.is_active"
+                    :label="$lang.active || 'Active'"
+                    has-border />
             </section>
         </div>
 

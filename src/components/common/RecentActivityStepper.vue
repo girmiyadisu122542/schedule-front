@@ -49,7 +49,7 @@ const handleClick = (step: StepItem, index: number) => {
 
 <template>
     <div 
-        class="mt-3 rounded-3xl bg-white p-6"
+        class="bg-surface-card mt-3 rounded-3xl p-6"
         :class="[props.needBorder ? 'border-schedule-border-subtle border' : '']">
         <div
             class="mb-4"

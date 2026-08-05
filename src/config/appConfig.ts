@@ -90,6 +90,37 @@ export const MIN_CODE_LENGTH = 3;
 export const MIN_LEVEL_VALUE = 0;
 export const MAX_PHONE_CODE = 5;
 
+/**
+ * Scheduling master-data bounds. Fallback copies of the backend constants in
+ * `helper/AppConfig.php` — Zod schemas evaluate at module load, so they cannot
+ * wait on a hydrated store. Keep them in step with the backend.
+ */
+export const MAX_CAMPUS_CODE_LENGTH = 20;
+export const MAX_ROOM_CODE_LENGTH = 30;
+export const MAX_CITY_LENGTH = 100;
+export const MAX_ADDRESS_LENGTH = 1000;
+export const MIN_BUILDING_FLOORS = -10;
+export const MAX_BUILDING_FLOORS = 200;
+export const MIN_PROGRAM_DURATION_YEARS = 1;
+export const MAX_PROGRAM_DURATION_YEARS = 10;
+export const MIN_SECTION_YEAR_LEVEL = 1;
+export const MAX_SECTION_YEAR_LEVEL = 10;
+export const MIN_SEMESTER_TERM = 1;
+export const MAX_SEMESTER_TERM = 3;
+export const MAX_SECTION_LABEL_LENGTH = 10;
+export const MAX_SECTION_EXPECTED_STUDENTS = 10000;
+export const MAX_ROOM_CAPACITY = 10000;
+export const MAX_LONG_NAME_LENGTH = 100;
+export const MAX_DESCRIPTION_LENGTH = 1000;
+export const MAX_PHONE_LENGTH = 20;
+export const MAX_COURSE_HOURS = 99.99;
+export const MAX_SESSIONS_PER_WEEK = 14;
+// Mirrors MAX_EXAM_INVIGILATORS in helper/AppConfig.php.
+export const MAX_EXAM_INVIGILATORS = 20;
+export const MAX_INSTRUCTOR_EMAIL_LENGTH = 150;
+export const MAX_ACADEMIC_RANK_LENGTH = 40;
+export const MAX_INSTRUCTOR_WEEKLY_HOURS = 999.99;
+
 export const DEFAULT_COUNTRY_CODE = 'ET';
 export const ISO_COUNTRY_CODE_LENGTH = 2;
 export const REGIONAL_INDICATOR_OFFSET = 127397;

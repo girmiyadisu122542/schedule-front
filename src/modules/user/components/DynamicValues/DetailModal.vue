@@ -24,10 +24,9 @@ const getBadgeStyle = (color: string) => {
     <div
         v-if="show"
         class="fixed inset-0 z-999999 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-        <div
-            class="dark:bg-schedule-dark w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl transition-all">
+        <div class="bg-surface-card w-full max-w-2xl overflow-hidden rounded-3xl shadow-2xl transition-all">
             <div class="flex items-center justify-between p-6 pb-0">
-                <h2 class="text-schedule-text-primary text-xl font-semibold dark:text-white">
+                <h2 class="text-text-primary text-xl font-semibold">
                     {{ $lang.viewLookupType }}
                 </h2>
                 <MainButton
@@ -40,7 +39,7 @@ const getBadgeStyle = (color: string) => {
                 <div class="mb-8 flex items-start justify-between">
                     <div>
                         <div class="mb-1 flex items-center gap-3">
-                            <h3 class="text-schedule-text-primary text-xl font-semibold dark:text-white">
+                            <h3 class="text-text-primary text-xl font-semibold">
                                 {{ data?.display_name }}
                             </h3>
                             <span
@@ -49,7 +48,7 @@ const getBadgeStyle = (color: string) => {
                                 {{ data?.state_data?.name }}
                             </span>
                         </div>
-                        <p class="text-md text-schedule-text-tertiary dark:text-gray-400">{{ $lang.valueType }}</p>
+                        <p class="text-md text-text-tertiary">{{ $lang.valueType }}</p>
                     </div>
 
                     <div class="text-right">
@@ -63,27 +62,26 @@ const getBadgeStyle = (color: string) => {
                                 {{ data?.status_lookup_value?.display_name || $lang.noStatus }}
                             </span>
                         </div>
-                        <p class="text-schedule-text-tertiary text-md dark:text-schedule-text-tertiary mt-1">
+                        <p class="text-text-tertiary text-md mt-1">
                             {{ $lang.status }}
                         </p>
                     </div>
                 </div>
 
-                <div
-                    class="bg-schedule-primary rounded-3xl border border-gray-100 dark:border-gray-800 dark:bg-gray-900/20">
-                    <div class="flex items-center gap-2 p-5 dark:border-gray-800">
-                        <span class="font-bold text-gray-900 dark:text-white">{{ $lang.dynamicValue }}</span>
-                        <ArrowDown class="h-4 w-4 text-gray-500" />
+                <div class="bg-surface-muted border-border-default rounded-3xl border">
+                    <div class="flex items-center gap-2 p-5">
+                        <span class="text-text-primary font-bold">{{ $lang.dynamicValue }}</span>
+                        <ArrowDown class="text-text-tertiary h-4 w-4" />
                     </div>
 
                     <div class="custom-scrollbar max-h-72 overflow-y-auto">
                         <div
                             v-for="(val, index) in data?.values"
                             :key="val.id"
-                            class="flex items-center justify-between p-5 transition-colors hover:bg-gray-100/50 dark:hover:bg-gray-800/50">
+                            class="hover:bg-surface-hover flex items-center justify-between p-5 transition-colors">
                             <div class="flex items-center gap-4">
-                                <span class="text-gray-400">{{ Number(index) + 1 }}.</span>
-                                <span class="font-medium text-gray-700 dark:text-gray-300">
+                                <span class="text-text-muted">{{ Number(index) + 1 }}.</span>
+                                <span class="text-text-secondary font-medium">
                                     {{ val?.display_name }}
                                 </span>
                             </div>
@@ -101,8 +99,7 @@ const getBadgeStyle = (color: string) => {
                 </div>
             </div>
 
-            <div
-                class="flex justify-end border-t border-gray-100 bg-gray-50 p-6 dark:border-gray-800 dark:bg-gray-800/40">
+            <div class="border-border-default bg-surface-muted flex justify-end border-t p-6">
                 <MainButton
                     @click="$emit('openFullDetail')"
                     outlined

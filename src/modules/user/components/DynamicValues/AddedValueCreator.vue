@@ -48,17 +48,17 @@ const handleSave = () => {
 
 <template>
     <div
-        class="dark:bg-schedule-dark mb-4 overflow-hidden rounded-xl border border-gray-200 bg-white"
-        :class="{ 'border-schedule-border-subtle': field.isExpanded }">
+        class="bg-surface-card border-border-default mb-4 overflow-hidden rounded-xl border"
+        :class="{ 'border-border-default': field.isExpanded }">
         <div
             @click="field.isExpanded = !field.isExpanded"
-            class="group dark:hover:bg-schedule-dark flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-gray-50">
+            class="group hover:bg-surface-hover flex cursor-pointer items-center justify-between p-4 transition-colors">
             <div class="flex items-center gap-3">
                 <DragIcon class="h-4 w-4" />
-                <span class="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500 uppercase">
+                <span class="bg-surface-subtle text-text-tertiary rounded px-2 py-0.5 text-[10px] font-bold uppercase">
                     {{ field.order }}
                 </span>
-                <span class="text-schedule-text-primary dark:text-schedule-text-tertiary font-semibold">
+                <span class="text-text-primary font-semibold">
                     {{ field.name }}
                 </span>
                 <span
@@ -76,7 +76,7 @@ const handleSave = () => {
                     class="h-4 w-4 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100"
                     @click.stop="handleEditClick" />
                 <i
-                    class="fa-solid fa-chevron-down text-gray-400 transition-transform"
+                    class="fa-solid fa-chevron-down text-text-muted transition-transform"
                     :class="{ 'rotate-180': field.isExpanded }"></i>
             </div>
         </div>
@@ -110,8 +110,8 @@ const handleSave = () => {
                         </div>
                     </div>
 
-                    <div class="border-schedule-tertiary flex items-center space-x-2 border-b py-3">
-                        <p class="text-schedule-text-secondary dark:text-schedule-text-tertiary py-2 text-sm font-semibold">
+                    <div class="border-border-default flex items-center space-x-2 border-b py-3">
+                        <p class="text-text-secondary py-2 text-sm font-semibold">
                             {{ $lang.attachIcon }}
                         </p>
                         <MainButton
@@ -142,7 +142,7 @@ const handleSave = () => {
                     </div>
                     <div
                         v-if="showActions"
-                        class="mt-4 flex justify-end gap-3 border-t border-gray-100 p-4 dark:bg-black/10">
+                        class="border-border-default mt-4 flex justify-end gap-3 border-t p-4">
                         <MainButton
                             :label="$lang.cancel"
                             variant="text"
@@ -156,7 +156,7 @@ const handleSave = () => {
             </div>
             <div
                 v-if="shouldShowActions && isEditingLocal"
-                class="mt-4 flex justify-end gap-3 border-t border-gray-100 p-4 dark:bg-black/10">
+                class="border-border-default mt-4 flex justify-end gap-3 border-t p-4">
                 <MainButton
                     :label="$lang.cancel"
                     variant="text"

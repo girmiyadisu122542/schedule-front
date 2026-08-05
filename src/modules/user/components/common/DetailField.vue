@@ -16,7 +16,7 @@ defineProps<{
         <div class="flex flex-wrap items-center gap-2.5">
             <p 
                 class="text-schedule-text-primary dark:text-schedule-text-inverse break-words text-sm capitalize font-semibold line-height-4xl md:text-lg leading-6"
-                :title= value >
+                :title="value != null ? String(value) : undefined">
                 {{ value || '-' }}
             </p>
             <MainBadge

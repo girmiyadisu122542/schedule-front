@@ -16,7 +16,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="bg-schedule-generic-white dark:bg-schedule-dark border-schedule-border-subtle rounded-xl border p-5">
+    <div class="bg-surface-card border-border-default rounded-xl border p-5">
         <div class="items-center space-x-2 md:flex">
             <FieldWrapper
                 :label="$lang.name"
@@ -32,7 +32,7 @@ onMounted(() => {
                         v-model="formData.applies_to_model"
                         :options="filteredModelOptions"
                         :placeholder="$lang.selectModel" />
-                    <p class="text-schedule-text-tertiary ml-2 text-xs font-normal">{{ $lang.selectTowhichModel }}</p>
+                    <p class="text-text-tertiary ml-2 text-xs font-normal">{{ $lang.selectTowhichModel }}</p>
                 </FieldWrapper>
             </div>
         </div>

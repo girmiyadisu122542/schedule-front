@@ -27,7 +27,7 @@ const searchQuery = ref('');
 const authStore = useAuthStore();
 const languageStore = useLanguageStore();
 const allowedRoutesStore = useAllowedRoutesStore();
-const currentLang = ref(languageStore.currentLanguage);
+const currentLang = computed(() => languageStore.currentLanguage);
 const menuGroups = computed(() => allowedRoutesStore.filteredSidebarMenu);
 const dashboardPath = computed(() => allowedRoutesStore.authRedirect || '/dashboard');
 
@@ -48,7 +48,8 @@ const closeLanguageDropdown = () => {
 };
 
 const selectLanguage = (langCode: string) => {
-    currentLang.value = langCode;
+    // The store owns the current language (and persists it to the cookie);
+    // `currentLang` reads it back, so there is nothing to set here.
     languageStore.setLanguage(langCode);
     closeLanguageDropdown();
 };
@@ -186,16 +187,28 @@ onUnmounted(() => {
 
                     <!-- Language Dropdown -->
                     <div class="text-text-tertiary relative">
-                        <!-- <button
+                        <button
                             type="button"
+                            :title="$lang.language || 'Language'"
+                            :aria-label="$lang.language || 'Language'"
+                            aria-haspopup="listbox"
+                            :aria-expanded="languageDropdownOpen"
                             @click="toggleLanguageDropdown"
-                            class="language-dropdown-trigger text-text-tertiary hover:bg-surface-hover hover:text-text-primary flex h-10 w-10 items-center justify-center rounded-md transition-colors">
-                            <i class="fa-solid fa-language text-lg"></i>
-                        </button> -->
+                            class="language-dropdown-trigger text-text-tertiary hover:bg-surface-hover hover:text-text-primary flex h-10 items-center gap-1.5 rounded-md px-2 transition-colors">
+                            <GlobeIcon class="h-5 w-5 shrink-0" />
+                            <!-- The code, so the active language reads at a glance. -->
+                            <span class="text-xs font-semibold uppercase">{{ currentLang }}</span>
+                        </button>
 
+                        <!--
+                            `language-dropdown-menu` is what the click-outside
+                            handler checks — without it, clicking an option
+                            closes the menu before the click lands.
+                        -->
                         <div
                             v-if="languageDropdownOpen"
-                            class="bg-surface-card border-border-default absolute right-0 z-50 mt-2 flex w-48 flex-col rounded-xl border py-2 shadow-xl">
+                            role="listbox"
+                            class="language-dropdown-menu bg-surface-card border-border-default absolute right-0 z-50 mt-2 flex w-48 flex-col rounded-xl border py-2 shadow-xl">
                             <MainButton
                                 ghost
                                 v-for="lang in languageStore.availableLanguages"

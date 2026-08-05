@@ -45,7 +45,7 @@ export function useLookupValues(typeCode: string) {
     /** Resolve a single value of this type by its code, or null when absent. */
     function resolve(code: string | null | undefined): LookupValueRef | null {
         if (!code) return null;
-        return dropdown.options.value.find((item) => item.code === code) ?? null;
+        return dropdown.options.value.find((item: LookupValueRef) => item.code === code) ?? null;
     }
 
     return {
