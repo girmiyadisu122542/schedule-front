@@ -4,6 +4,7 @@ import { createSharedComposable } from '@vueuse/core';
 import { useLanguageStore } from '@/stores/languageStore';
 import { collegeSchema } from '@/modules/masterData/schemas/collegeSchema';
 import { useCrudResource } from '@/composables/useCrudResource';
+import { useImportExport } from '@/composables/useImportExport';
 import type { College, CollegeForm } from '@/modules/masterData/types/college';
 import {
     fetchColleges,
@@ -56,8 +57,23 @@ function collegeManager() {
         columns
     });
 
+    const importExport = useImportExport({
+        baseUrl: '/colleges',
+        entity: 'College',
+        filePrefix: 'colleges',
+        labelKey: 'college',
+        labelFallback: 'College',
+        importOrderKey: 'importOrderColleges',
+        importOrderFallback: 'Colleges sit at the top of the academic hierarchy and have no prerequisites.',
+        // Read at click time, so an export carries the filters the list
+        // currently has applied rather than a snapshot from mount.
+        currentParams: resource.currentQueryParams,
+        onImported: () => resource.fetchItems()
+    });
+
     return {
         ...resource,
+        ...importExport,
         colleges: resource.items,
         fetchColleges: resource.fetchItems,
         saveCollegeForm: resource.saveForm

@@ -205,6 +205,18 @@ export function useCrudResource<TItem extends CrudItem, TForm extends object, TP
         }
     };
 
+    /**
+     * The query the list is CURRENTLY showing, minus paging.
+     *
+     * Export sends exactly this, so a user who has filtered to one college
+     * exports that college rather than all 400 rows. Page and limit are left
+     * out deliberately — an export is the whole filtered set, not one page.
+     */
+    const currentQueryParams = (): Record<string, unknown> => ({
+        search: searchQuery.value || undefined,
+        ...filters.value
+    });
+
     const handleSearch = (value: string) => {
         searchQuery.value = value;
         fetchItems({ page: FIRST_PAGE });
@@ -445,6 +457,8 @@ export function useCrudResource<TItem extends CrudItem, TForm extends object, TP
         editForm,
         editErrors,
         isSavingEdit,
+
+        currentQueryParams,
 
         fetchItems,
         handleSearch,

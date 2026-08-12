@@ -4,6 +4,7 @@ import { createSharedComposable } from '@vueuse/core';
 import { useLanguageStore } from '@/stores/languageStore';
 import { sectionSchema } from '@/modules/masterData/schemas/sectionSchema';
 import { useCrudResource } from '@/composables/useCrudResource';
+import { useImportExport } from '@/composables/useImportExport';
 import type { Section, SectionForm } from '@/modules/masterData/types/section';
 import {
     fetchSections,
@@ -61,8 +62,24 @@ function sectionManager() {
         columns
     });
 
+    const importExport = useImportExport({
+        baseUrl: '/sections',
+        entity: 'Section',
+        filePrefix: 'sections',
+        labelKey: 'section',
+        labelFallback: 'Section',
+        importOrderKey: 'importOrderSections',
+        importOrderFallback:
+            'Programs and academic years must exist first: colleges → departments → programs → sections.',
+        // Read at click time, so an export carries the filters the list
+        // currently has applied rather than a snapshot from mount.
+        currentParams: resource.currentQueryParams,
+        onImported: () => resource.fetchItems()
+    });
+
     return {
         ...resource,
+        ...importExport,
         sections: resource.items,
         fetchSections: resource.fetchItems,
         saveSectionForm: resource.saveForm

@@ -329,6 +329,28 @@ export const EXPORT_PAD_START_FILL_STRING = '0';
 export const EXPORT_MONTH_OFFSET = 1;
 export const EXPORT_NOT_FOUND = 404;
 
+/**
+ * Master-data spreadsheet import / export.
+ *
+ * Mirrors `App\Constants\ImportConstant` on the backend. The backend stays the
+ * authority — these are the values the UI needs before a round trip, and the
+ * row/size ceilings are shown only as guidance; the server enforces them.
+ */
+export const EXPORT_FORMAT_XLSX = 'xlsx';
+export const EXPORT_FORMAT_CSV = 'csv';
+export const EXPORT_FORMATS = [EXPORT_FORMAT_XLSX, EXPORT_FORMAT_CSV] as const;
+export type ExportFormat = (typeof EXPORT_FORMATS)[number];
+
+export const IMPORT_MODE_CREATE_ONLY = 'create_only';
+export const IMPORT_MODE_UPSERT = 'upsert';
+export const IMPORT_MODES = [IMPORT_MODE_CREATE_ONLY, IMPORT_MODE_UPSERT] as const;
+export type ImportMode = (typeof IMPORT_MODES)[number];
+
+/** Accept attribute for the file picker. */
+export const IMPORT_ACCEPTED_FILE_TYPES = '.xlsx,.csv';
+/** Rows shown in the dry-run error table before it scrolls. */
+export const IMPORT_ERROR_PREVIEW_ROWS = 50;
+
 export const CONTROL_SIZE = {
     SMALL: 'small',
     NORMAL: 'normal',

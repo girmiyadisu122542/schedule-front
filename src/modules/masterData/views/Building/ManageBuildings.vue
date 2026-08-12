@@ -9,6 +9,7 @@ import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import ImportDialog from '@/components/common/ImportDialog.vue';
 import BuildingFormDialog from '@/modules/masterData/components/Building/BuildingFormDialog.vue';
 
 import ModernBuilding from '@/assets/icons/ModernBuilding.vue';
@@ -32,7 +33,29 @@ const {
     handleFilterChange,
     getActionOptions,
     openCreateDialog,
-    saveBuildingForm
+    saveBuildingForm,
+    entityLabel,
+    importOrderHint,
+    canExport,
+    canImport,
+    exportFormats,
+    isExporting,
+    isUploading,
+    isDownloadingTemplate,
+    importDialogVisible,
+    mode,
+    report,
+    hasPreviewed,
+    canCommit,
+    rowsToWrite,
+    openImportDialog,
+    closeImportDialog,
+    setFile,
+    setMode,
+    previewImport,
+    confirmImport,
+    exportList,
+    downloadTemplate
 } = useBuilding();
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('buildings', 'Buildings') }]);
@@ -74,6 +97,12 @@ onMounted(() => {
                 :search-placeholder="$lang.searchBuildings || 'Search buildings...'"
                 :show-add-button="$can('createBuilding')"
                 :show-refresh="true"
+                :show-import="canImport"
+                :show-export="canExport"
+                :export-formats="exportFormats"
+                :export-loading="isExporting"
+                @import="openImportDialog"
+                @export="exportList"
                 @refresh="fetchBuildings"
                 @add="openCreateDialog"
                 @search="handleSearch"
@@ -124,5 +153,23 @@ onMounted(() => {
             :type="confirmState.type"
             :loading="confirmState.loading"
             @confirm="confirmState.onConfirm" />
+
+        <ImportDialog
+            :visible="importDialogVisible"
+            :entity-label="entityLabel"
+            :import-order-hint="importOrderHint"
+            :is-uploading="isUploading"
+            :is-downloading-template="isDownloadingTemplate"
+            :report="report"
+            :has-previewed="hasPreviewed"
+            :can-commit="canCommit"
+            :rows-to-write="rowsToWrite"
+            :mode="mode"
+            @update:visible="closeImportDialog"
+            @update:mode="setMode"
+            @file="setFile"
+            @preview="previewImport"
+            @confirm="confirmImport"
+            @template="downloadTemplate" />
     </div>
 </template>

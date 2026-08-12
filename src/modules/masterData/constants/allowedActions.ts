@@ -8,6 +8,22 @@
  * hiding a button.
  */
 export type MasterDataAllowedAction =
+    | 'exportCollege'
+    | 'importCollege'
+    | 'exportBuilding'
+    | 'importBuilding'
+    | 'exportDepartment'
+    | 'importDepartment'
+    | 'exportProgram'
+    | 'importProgram'
+    | 'exportSection'
+    | 'importSection'
+    | 'exportRoom'
+    | 'importRoom'
+    | 'exportCourse'
+    | 'importCourse'
+    | 'exportInstructor'
+    | 'importInstructor'
     | 'seeCampus'
     | 'createCampus'
     | 'updateCampus'

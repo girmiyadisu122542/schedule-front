@@ -11,6 +11,7 @@ import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import ImportDialog from '@/components/common/ImportDialog.vue';
 import ProgramFormDialog from '@/modules/masterData/components/Program/ProgramFormDialog.vue';
 
 import BookIcon from '@/assets/icons/BookIcon.vue';
@@ -35,7 +36,29 @@ const {
     handleFilterChange,
     getActionOptions,
     openCreateDialog,
-    saveProgramForm
+    saveProgramForm,
+    entityLabel,
+    importOrderHint,
+    canExport,
+    canImport,
+    exportFormats,
+    isExporting,
+    isUploading,
+    isDownloadingTemplate,
+    importDialogVisible,
+    mode,
+    report,
+    hasPreviewed,
+    canCommit,
+    rowsToWrite,
+    openImportDialog,
+    closeImportDialog,
+    setFile,
+    setMode,
+    previewImport,
+    confirmImport,
+    exportList,
+    downloadTemplate
 } = useProgram();
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('programs', 'Programs') }]);
@@ -79,6 +102,12 @@ onMounted(() => {
                 :search-placeholder="$lang.searchPrograms || 'Search programs...'"
                 :show-add-button="$can('createProgram')"
                 :show-refresh="true"
+                :show-import="canImport"
+                :show-export="canExport"
+                :export-formats="exportFormats"
+                :export-loading="isExporting"
+                @import="openImportDialog"
+                @export="exportList"
                 @refresh="fetchPrograms"
                 @add="openCreateDialog"
                 @search="handleSearch"
@@ -144,5 +173,23 @@ onMounted(() => {
             :type="confirmState.type"
             :loading="confirmState.loading"
             @confirm="confirmState.onConfirm" />
+
+        <ImportDialog
+            :visible="importDialogVisible"
+            :entity-label="entityLabel"
+            :import-order-hint="importOrderHint"
+            :is-uploading="isUploading"
+            :is-downloading-template="isDownloadingTemplate"
+            :report="report"
+            :has-previewed="hasPreviewed"
+            :can-commit="canCommit"
+            :rows-to-write="rowsToWrite"
+            :mode="mode"
+            @update:visible="closeImportDialog"
+            @update:mode="setMode"
+            @file="setFile"
+            @preview="previewImport"
+            @confirm="confirmImport"
+            @template="downloadTemplate" />
     </div>
 </template>

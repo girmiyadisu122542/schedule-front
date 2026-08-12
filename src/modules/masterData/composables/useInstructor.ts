@@ -4,6 +4,7 @@ import { createSharedComposable } from '@vueuse/core';
 import { useLanguageStore } from '@/stores/languageStore';
 import { instructorSchema } from '@/modules/masterData/schemas/instructorSchema';
 import { useCrudResource } from '@/composables/useCrudResource';
+import { useImportExport } from '@/composables/useImportExport';
 import type { Instructor, InstructorForm } from '@/modules/masterData/types/instructor';
 import {
     fetchInstructors,
@@ -21,7 +22,7 @@ const emptyForm = (): InstructorForm => ({
     email: '',
     phone: '',
     department_id: null,
-    academic_rank: '',
+    academic_rank_lookup_value_id: null,
     user_id: null,
     can_teach: true,
     can_invigilate: true,
@@ -79,7 +80,7 @@ function instructorManager() {
             email: instructor.email ?? '',
             phone: instructor.phone ?? '',
             department_id: instructor.department_id,
-            academic_rank: instructor.academic_rank ?? '',
+            academic_rank_lookup_value_id: instructor.academic_rank_lookup_value_id,
             user_id: instructor.user_id,
             can_teach: instructor.can_teach,
             can_invigilate: instructor.can_invigilate,
@@ -92,8 +93,23 @@ function instructorManager() {
         filters
     });
 
+    const importExport = useImportExport({
+        baseUrl: '/instructors',
+        entity: 'Instructor',
+        filePrefix: 'instructors',
+        labelKey: 'instructor',
+        labelFallback: 'Instructor',
+        importOrderKey: 'importOrderInstructors',
+        importOrderFallback: 'Departments must exist first: colleges → departments → instructors.',
+        // Read at click time, so an export carries the filters the list
+        // currently has applied rather than a snapshot from mount.
+        currentParams: resource.currentQueryParams,
+        onImported: () => resource.fetchItems()
+    });
+
     return {
         ...resource,
+        ...importExport,
         instructors: resource.items,
         fetchInstructors: resource.fetchItems,
         saveInstructorForm: resource.saveForm

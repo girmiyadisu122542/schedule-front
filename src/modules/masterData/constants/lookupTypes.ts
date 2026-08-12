@@ -8,6 +8,7 @@
  * returning an empty dropdown.
  */
 export const LOOKUP_TYPE = {
+    ACADEMIC_RANK: 'ACADEMIC_RANK',
     DEGREE_LEVEL: 'DEGREE_LEVEL',
     SEMESTER_STATUS: 'SEMESTER_STATUS',
     ROOM_TYPE: 'ROOM_TYPE',

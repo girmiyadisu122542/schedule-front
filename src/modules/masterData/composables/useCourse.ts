@@ -4,6 +4,7 @@ import { createSharedComposable } from '@vueuse/core';
 import { useLanguageStore } from '@/stores/languageStore';
 import { courseSchema } from '@/modules/masterData/schemas/courseSchema';
 import { useCrudResource } from '@/composables/useCrudResource';
+import { useImportExport } from '@/composables/useImportExport';
 import type { Course, CourseForm } from '@/modules/masterData/types/course';
 import {
     fetchCourses,
@@ -75,8 +76,23 @@ function courseManager() {
         columns
     });
 
+    const importExport = useImportExport({
+        baseUrl: '/courses',
+        entity: 'Course',
+        filePrefix: 'courses',
+        labelKey: 'course',
+        labelFallback: 'Course',
+        importOrderKey: 'importOrderCourses',
+        importOrderFallback: 'Departments must exist first: colleges → departments → courses.',
+        // Read at click time, so an export carries the filters the list
+        // currently has applied rather than a snapshot from mount.
+        currentParams: resource.currentQueryParams,
+        onImported: () => resource.fetchItems()
+    });
+
     return {
         ...resource,
+        ...importExport,
         courses: resource.items,
         fetchCourses: resource.fetchItems,
         saveCourseForm: resource.saveForm

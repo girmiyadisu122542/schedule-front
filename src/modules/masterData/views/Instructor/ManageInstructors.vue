@@ -10,6 +10,7 @@ import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import ImportDialog from '@/components/common/ImportDialog.vue';
 import InstructorFormDialog from '@/modules/masterData/components/Instructor/InstructorFormDialog.vue';
 
 import UserIcon from '@/assets/icons/UserIcon.vue';
@@ -33,7 +34,29 @@ const {
     handleFilterChange,
     getActionOptions,
     openCreateDialog,
-    saveInstructorForm
+    saveInstructorForm,
+    entityLabel,
+    importOrderHint,
+    canExport,
+    canImport,
+    exportFormats,
+    isExporting,
+    isUploading,
+    isDownloadingTemplate,
+    importDialogVisible,
+    mode,
+    report,
+    hasPreviewed,
+    canCommit,
+    rowsToWrite,
+    openImportDialog,
+    closeImportDialog,
+    setFile,
+    setMode,
+    previewImport,
+    confirmImport,
+    exportList,
+    downloadTemplate
 } = useInstructor();
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('instructors', 'Instructors') }]);
@@ -74,6 +97,12 @@ onMounted(() => {
                 :search-placeholder="$lang.searchInstructors || 'Search instructors...'"
                 :show-add-button="$can('createInstructor')"
                 :show-refresh="true"
+                :show-import="canImport"
+                :show-export="canExport"
+                :export-formats="exportFormats"
+                :export-loading="isExporting"
+                @import="openImportDialog"
+                @export="exportList"
                 @refresh="fetchInstructors"
                 @add="openCreateDialog"
                 @search="handleSearch"
@@ -97,7 +126,7 @@ onMounted(() => {
                 </template>
 
                 <template #cell-academic_rank="{ item }">
-                    <span class="text-text-secondary">{{ (item as Instructor).academic_rank || '—' }}</span>
+                    <span class="text-text-secondary">{{ (item as Instructor).academic_rank?.name || '—' }}</span>
                 </template>
 
                 <template #cell-can_teach="{ item }">
@@ -144,5 +173,23 @@ onMounted(() => {
             :type="confirmState.type"
             :loading="confirmState.loading"
             @confirm="confirmState.onConfirm" />
+
+        <ImportDialog
+            :visible="importDialogVisible"
+            :entity-label="entityLabel"
+            :import-order-hint="importOrderHint"
+            :is-uploading="isUploading"
+            :is-downloading-template="isDownloadingTemplate"
+            :report="report"
+            :has-previewed="hasPreviewed"
+            :can-commit="canCommit"
+            :rows-to-write="rowsToWrite"
+            :mode="mode"
+            @update:visible="closeImportDialog"
+            @update:mode="setMode"
+            @file="setFile"
+            @preview="previewImport"
+            @confirm="confirmImport"
+            @template="downloadTemplate" />
     </div>
 </template>

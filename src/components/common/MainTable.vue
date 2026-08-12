@@ -136,6 +136,17 @@ interface Props {
     importLabel?: string;
     /** Optional text label for the export button; when omitted the button stays icon-only. */
     exportLabel?: string;
+    /**
+     * Formats the export button offers. Supply them and the button opens a small
+     * menu and emits the chosen value; omit them and it stays a single button
+     * emitting `export` with no argument, exactly as before.
+     *
+     * Deliberately generic — the table knows about "formats", not about
+     * spreadsheets, so the caller decides what the options mean.
+     */
+    exportFormats?: { label: string; value: string }[];
+    /** Shows a spinner and blocks the export button while a download is in flight. */
+    exportLoading?: boolean;
     columnPersistKey?: string;
 }
 
@@ -165,6 +176,8 @@ const props = withDefaults(defineProps<Props>(), {
     showExport: false,
     importLabel: undefined,
     exportLabel: undefined,
+    exportFormats: () => [],
+    exportLoading: false,
     columnPersistKey: undefined
 });
 
@@ -184,7 +197,8 @@ const emit = defineEmits<{
     (e: 'selectAllPages', value?: any): void;
     (e: 'refresh'): void;
     (e: 'import'): void;
-    (e: 'export'): void;
+    /** Carries the chosen format when `exportFormats` is supplied. */
+    (e: 'export', format?: string): void;
 }>();
 
 const sortConfig = ref<{ key: string | null; order: typeof ASC_KEY_ORDER | typeof DESC_KEY_ORDER }>({
@@ -202,11 +216,31 @@ const isFilterVisible = ref(false);
 const isOverflowOpen = ref(false);
 const isAllPagesSelected = ref(false);
 const isColumnMenuVisible = ref(false);
+const isExportMenuVisible = ref(false);
+
+/**
+ * Click the export button: pick a format when the caller offered a choice,
+ * otherwise fire straight away.
+ */
+const handleExportClick = () => {
+    if (props.exportFormats.length) {
+        isExportMenuVisible.value = !isExportMenuVisible.value;
+        return;
+    }
+
+    emit('export');
+};
+
+const chooseExportFormat = (format: string) => {
+    isExportMenuVisible.value = false;
+    emit('export', format);
+};
 const selectedRows = ref<Item[]>([]);
 const selectedFilters = ref<Record<string, any>>({});
 const sortMenuRef = useTemplateRef('sortMenuRef');
 const sortButtonRef = useTemplateRef('sortButtonRef');
 const columnMenuRef = useTemplateRef('columnMenuRef');
+const exportMenuRef = useTemplateRef('exportMenuRef');
 const COLUMN_PREFS_PREFIX = 'schedule.table.columns.';
 
 function defaultHiddenColumns(): Set<string> {
@@ -515,6 +549,10 @@ const clearAllFilters = () => {
     emit('filter-change', {});
 };
 
+onClickOutside(exportMenuRef, () => {
+    isExportMenuVisible.value = false;
+});
+
 onClickOutside(columnMenuRef, () => {
     isColumnMenuVisible.value = false;
 });
@@ -702,20 +740,44 @@ onClickOutside(overflowMenuRef, () => {
                         {{ importLabel }}
                     </span>
                 </button>
-                <button
+                <div
                     v-if="showExport"
-                    @click="emit('export')"
-                    :title="exportLabel || $lang.export || 'Export'"
-                    :aria-label="exportLabel || $lang.export || 'Export'"
-                    class="bg-surface-card border-border-default text-text-secondary hover:bg-surface-hover flex h-10 items-center justify-center rounded-lg border shadow-xs transition-all"
-                    :class="exportLabel ? 'gap-2 px-3' : 'w-10'">
-                    <ExportIcon class="h-5 w-5" />
-                    <span
-                        v-if="exportLabel"
-                        class="text-sm font-medium">
-                        {{ exportLabel }}
-                    </span>
-                </button>
+                    ref="exportMenuRef"
+                    class="relative">
+                    <button
+                        @click="handleExportClick"
+                        :disabled="exportLoading"
+                        :title="exportLabel || $lang.export || 'Export'"
+                        :aria-label="exportLabel || $lang.export || 'Export'"
+                        class="bg-surface-card border-border-default text-text-secondary hover:bg-surface-hover flex h-10 items-center justify-center rounded-lg border shadow-xs transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                        :class="exportLabel ? 'gap-2 px-3' : 'w-10'">
+                        <SpinnerIcon
+                            v-if="exportLoading"
+                            class="h-5 w-5 animate-spin" />
+                        <ExportIcon
+                            v-else
+                            class="h-5 w-5" />
+                        <span
+                            v-if="exportLabel"
+                            class="text-sm font-medium">
+                            {{ exportLabel }}
+                        </span>
+                    </button>
+
+                    <!-- Only rendered when the caller offered a choice of formats. -->
+                    <div
+                        v-if="isExportMenuVisible && exportFormats.length"
+                        class="bg-surface-card border-border-default absolute end-0 z-30 mt-1 w-56 overflow-hidden rounded-lg border shadow-xl">
+                        <button
+                            v-for="format in exportFormats"
+                            :key="format.value"
+                            type="button"
+                            class="text-text-secondary hover:bg-surface-hover block w-full px-4 py-2.5 text-start text-sm transition"
+                            @click="chooseExportFormat(format.value)">
+                            {{ format.label }}
+                        </button>
+                    </div>
+                </div>
                 <div class="relative flex items-center gap-3">
                     <template v-if="showColumnToggle">
                         <button

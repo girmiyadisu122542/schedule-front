@@ -7,6 +7,8 @@ import MainSelect from '@/components/common/MainSelect.vue';
 import MainButton from '@/components/common/MainButton.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
+import { useLookupValues } from '@/composables/useLookupValues';
+import { LOOKUP_TYPE } from '@/modules/masterData/constants/lookupTypes';
 import { DROPDOWN_PARAM_KEY } from '@/config/appConfig';
 import type { InstructorForm } from '@/modules/masterData/types/instructor';
 import type { DropdownOption } from '@/types/CommonTypes';
@@ -26,6 +28,7 @@ const emit = defineEmits<{
 
 const departmentDropdown = useDropdownOptions<DropdownOption>('/departments', { [DROPDOWN_PARAM_KEY]: true });
 const userDropdown = useDropdownOptions<DropdownOption>('/user', { [DROPDOWN_PARAM_KEY]: true });
+const academicRanks = useLookupValues(LOOKUP_TYPE.ACADEMIC_RANK);
 
 onMounted(() => {
     departmentDropdown.fetchOptions();
@@ -80,14 +83,20 @@ onMounted(() => {
                         show-refresh
                         :loading="departmentDropdown.loading.value"
                         @refresh="departmentDropdown.fetchOptions(true)" />
-                    <InputText
-                        v-model="form.academic_rank"
-                        :label="$lang.academicRank || 'Academic rank'"
-                        :placeholder="$lang.enterAcademicRank || 'e.g. Lecturer'"
-                        :invalid="!!errors.academic_rank"
-                        :message="errors.academic_rank"
+                    <MainSelect
+                        v-model="form.academic_rank_lookup_value_id"
+                        :label-text="$lang.academicRank || 'Academic rank'"
+                        :options="academicRanks.options.value"
+                        option-label="name"
+                        option-value="id"
+                        :placeholder="$lang.selectAcademicRank || 'Select an academic rank'"
+                        :invalid="!!errors.academic_rank_lookup_value_id"
+                        :message="errors.academic_rank_lookup_value_id"
                         message-type="error"
-                        size="normal" />
+                        size="normal"
+                        show-refresh
+                        :loading="academicRanks.loading.value"
+                        @refresh="academicRanks.refetch(true)" />
                     <InputText
                         v-model="form.email"
                         :label="$lang.email || 'Email'"
