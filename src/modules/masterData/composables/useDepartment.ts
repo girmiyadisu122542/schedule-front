@@ -4,6 +4,7 @@ import { createSharedComposable } from '@vueuse/core';
 import { useLanguageStore } from '@/stores/languageStore';
 import { departmentSchema } from '@/modules/masterData/schemas/departmentSchema';
 import { useCrudResource } from '@/composables/useCrudResource';
+import { useImportExport } from '@/composables/useImportExport';
 import type { Department, DepartmentForm } from '@/modules/masterData/types/department';
 import {
     fetchDepartments,
@@ -58,8 +59,23 @@ function departmentManager() {
         columns
     });
 
+    const importExport = useImportExport({
+        baseUrl: '/departments',
+        entity: 'Department',
+        filePrefix: 'departments',
+        labelKey: 'department',
+        labelFallback: 'Department',
+        importOrderKey: 'importOrderDepartments',
+        importOrderFallback: 'Colleges must exist first: colleges → departments.',
+        // Read at click time, so an export carries the filters the list
+        // currently has applied rather than a snapshot from mount.
+        currentParams: resource.currentQueryParams,
+        onImported: () => resource.fetchItems()
+    });
+
     return {
         ...resource,
+        ...importExport,
         departments: resource.items,
         fetchDepartments: resource.fetchItems,
         saveDepartmentForm: resource.saveForm

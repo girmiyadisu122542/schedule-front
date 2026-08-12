@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * Export — an arrow going UP OUT of a tray.
+ *
+ * The mirror of `ImportIcon`: same tray, opposite arrow. Keeping the tray
+ * identical and flipping only the arrow is what makes the pair readable at
+ * toolbar size, where the two buttons sit side by side.
+ */
 const props = withDefaults(
     defineProps<{
         size?: number | string;
@@ -6,7 +13,7 @@ const props = withDefaults(
     }>(),
     {
         size: 20,
-        strokeWidth: 1.75
+        strokeWidth: 1.5
     }
 );
 </script>
@@ -17,25 +24,19 @@ const props = withDefaults(
         :height="props.size || '20'"
         viewBox="0 0 20 20"
         fill="none">
+        <!-- Arrow travelling up, out of the tray. -->
         <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M10 12.5H17.5C17.845 12.5 18.125 12.22 18.125 11.875C18.125 11.53 17.845 11.25 17.5 11.25H10C9.655 11.25 9.375 11.53 9.375 11.875C9.375 12.22 9.655 12.5 10 12.5Z"
-            fill="#404040" />
+            d="M10 12.5V3m0 0L6.25 6.75M10 3l3.75 3.75"
+            stroke="currentColor"
+            :stroke-width="props.strokeWidth"
+            stroke-linecap="round"
+            stroke-linejoin="round" />
+        <!-- The tray the data leaves. -->
         <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M15.1828 9.81656L17.2409 11.8747L15.1828 13.9328C14.9391 14.1766 14.9391 14.5728 15.1828 14.8166C15.4266 15.0603 15.8228 15.0603 16.0666 14.8166L18.5666 12.3166C18.8109 12.0728 18.8109 11.6766 18.5666 11.4328L16.0666 8.93281C15.8228 8.68906 15.4266 8.68906 15.1828 8.93281C14.9391 9.17656 14.9391 9.57281 15.1828 9.81656Z"
-            fill="#404040" />
-        <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M8.75 3.125V5.625C8.75 6.66062 9.58938 7.5 10.625 7.5H13.125C13.47 7.5 13.75 7.22 13.75 6.875C13.75 6.53 13.47 6.25 13.125 6.25H10.625C10.28 6.25 10 5.97 10 5.625V3.125C10 2.78 9.72 2.5 9.375 2.5C9.03 2.5 8.75 2.78 8.75 3.125Z"
-            fill="#404040" />
-        <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M14.375 9.375V6.875C14.375 6.70938 14.3094 6.55 14.1919 6.43313L9.81687 2.05812C9.7 1.94062 9.54062 1.875 9.375 1.875C9.375 1.875 6.19875 1.875 4.375 1.875C3.8775 1.875 3.40063 2.0725 3.04938 2.42437C2.6975 2.77562 2.5 3.2525 2.5 3.75V16.25C2.5 16.7475 2.6975 17.2244 3.04938 17.5756C3.40063 17.9275 3.8775 18.125 4.375 18.125H12.5C12.9975 18.125 13.4744 17.9275 13.8256 17.5756C14.1775 17.2244 14.375 16.7475 14.375 16.25C14.375 15.38 14.375 14.375 14.375 14.375C14.375 14.03 14.095 13.75 13.75 13.75C13.405 13.75 13.125 14.03 13.125 14.375V16.25C13.125 16.4156 13.0594 16.575 12.9419 16.6919C12.825 16.8094 12.6656 16.875 12.5 16.875H4.375C4.20938 16.875 4.05 16.8094 3.93313 16.6919C3.81563 16.575 3.75 16.4156 3.75 16.25V3.75C3.75 3.58438 3.81563 3.425 3.93313 3.30813C4.05 3.19063 4.20938 3.125 4.375 3.125H9.11625L13.125 7.13375V9.375C13.125 9.72 13.405 10 13.75 10C14.095 10 14.375 9.72 14.375 9.375Z"
-            fill="#404040" />
+            d="M3.5 13v2a2.5 2.5 0 0 0 2.5 2.5h8a2.5 2.5 0 0 0 2.5-2.5v-2"
+            stroke="currentColor"
+            :stroke-width="props.strokeWidth"
+            stroke-linecap="round"
+            stroke-linejoin="round" />
     </svg>
 </template>

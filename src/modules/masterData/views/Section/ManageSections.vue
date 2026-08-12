@@ -9,6 +9,7 @@ import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import ImportDialog from '@/components/common/ImportDialog.vue';
 import SectionFormDialog from '@/modules/masterData/components/Section/SectionFormDialog.vue';
 
 import BusinessChart from '@/assets/icons/BusinessChart.vue';
@@ -32,7 +33,29 @@ const {
     handleFilterChange,
     getActionOptions,
     openCreateDialog,
-    saveSectionForm
+    saveSectionForm,
+    entityLabel,
+    importOrderHint,
+    canExport,
+    canImport,
+    exportFormats,
+    isExporting,
+    isUploading,
+    isDownloadingTemplate,
+    importDialogVisible,
+    mode,
+    report,
+    hasPreviewed,
+    canCommit,
+    rowsToWrite,
+    openImportDialog,
+    closeImportDialog,
+    setFile,
+    setMode,
+    previewImport,
+    confirmImport,
+    exportList,
+    downloadTemplate
 } = useSection();
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('sections', 'Sections') }]);
@@ -73,6 +96,12 @@ onMounted(() => {
                 :search-placeholder="$lang.searchSections || 'Search sections...'"
                 :show-add-button="$can('createSection')"
                 :show-refresh="true"
+                :show-import="canImport"
+                :show-export="canExport"
+                :export-formats="exportFormats"
+                :export-loading="isExporting"
+                @import="openImportDialog"
+                @export="exportList"
                 @refresh="fetchSections"
                 @add="openCreateDialog"
                 @search="handleSearch"
@@ -134,5 +163,23 @@ onMounted(() => {
             :type="confirmState.type"
             :loading="confirmState.loading"
             @confirm="confirmState.onConfirm" />
+
+        <ImportDialog
+            :visible="importDialogVisible"
+            :entity-label="entityLabel"
+            :import-order-hint="importOrderHint"
+            :is-uploading="isUploading"
+            :is-downloading-template="isDownloadingTemplate"
+            :report="report"
+            :has-previewed="hasPreviewed"
+            :can-commit="canCommit"
+            :rows-to-write="rowsToWrite"
+            :mode="mode"
+            @update:visible="closeImportDialog"
+            @update:mode="setMode"
+            @file="setFile"
+            @preview="previewImport"
+            @confirm="confirmImport"
+            @template="downloadTemplate" />
     </div>
 </template>

@@ -1,3 +1,4 @@
+import type { LookupValueRef } from '@/composables/useLookupValues';
 import type { Pagination, User } from '@/types/CommonTypes';
 
 /** Compact department embed (backend `idAndNameFields`). */
@@ -25,7 +26,10 @@ export interface Instructor {
     name: string;
     email: string | null;
     phone: string | null;
-    academic_rank: string | null;
+    academic_rank_lookup_value_id: number | null;
+    /** Stable ACADEMIC_RANK code, for the rank chip. */
+    academic_rank_code: string | null;
+    academic_rank?: LookupValueRef | null;
     department_id: number;
     user_id: number | null;
     can_teach: boolean;
@@ -44,7 +48,7 @@ export interface InstructorForm {
     email: string;
     phone: string;
     department_id: number | null;
-    academic_rank: string;
+    academic_rank_lookup_value_id: number | null;
     user_id: number | null;
     can_teach: boolean;
     can_invigilate: boolean;

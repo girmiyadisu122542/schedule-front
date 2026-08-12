@@ -4,6 +4,7 @@ import { createSharedComposable } from '@vueuse/core';
 import { useLanguageStore } from '@/stores/languageStore';
 import { programSchema } from '@/modules/masterData/schemas/programSchema';
 import { useCrudResource } from '@/composables/useCrudResource';
+import { useImportExport } from '@/composables/useImportExport';
 import type { Program, ProgramForm } from '@/modules/masterData/types/program';
 import {
     fetchPrograms,
@@ -61,8 +62,23 @@ function programManager() {
         columns
     });
 
+    const importExport = useImportExport({
+        baseUrl: '/programs',
+        entity: 'Program',
+        filePrefix: 'programs',
+        labelKey: 'program',
+        labelFallback: 'Program',
+        importOrderKey: 'importOrderPrograms',
+        importOrderFallback: 'Colleges and departments must exist first: colleges → departments → programs.',
+        // Read at click time, so an export carries the filters the list
+        // currently has applied rather than a snapshot from mount.
+        currentParams: resource.currentQueryParams,
+        onImported: () => resource.fetchItems()
+    });
+
     return {
         ...resource,
+        ...importExport,
         programs: resource.items,
         fetchPrograms: resource.fetchItems,
         saveProgramForm: resource.saveForm

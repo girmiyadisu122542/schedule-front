@@ -4,6 +4,7 @@ import { createSharedComposable } from '@vueuse/core';
 import { useLanguageStore } from '@/stores/languageStore';
 import { buildingSchema } from '@/modules/masterData/schemas/buildingSchema';
 import { useCrudResource } from '@/composables/useCrudResource';
+import { useImportExport } from '@/composables/useImportExport';
 import type { Building, BuildingForm } from '@/modules/masterData/types/building';
 import {
     fetchBuildings,
@@ -58,8 +59,23 @@ function buildingManager() {
         columns
     });
 
+    const importExport = useImportExport({
+        baseUrl: '/buildings',
+        entity: 'Building',
+        filePrefix: 'buildings',
+        labelKey: 'building',
+        labelFallback: 'Building',
+        importOrderKey: 'importOrderBuildings',
+        importOrderFallback: 'Campuses must exist first: campuses → buildings → rooms.',
+        // Read at click time, so an export carries the filters the list
+        // currently has applied rather than a snapshot from mount.
+        currentParams: resource.currentQueryParams,
+        onImported: () => resource.fetchItems()
+    });
+
     return {
         ...resource,
+        ...importExport,
         buildings: resource.items,
         fetchBuildings: resource.fetchItems,
         saveBuildingForm: resource.saveForm

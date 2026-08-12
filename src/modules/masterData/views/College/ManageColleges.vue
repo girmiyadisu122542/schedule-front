@@ -9,6 +9,7 @@ import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import ImportDialog from '@/components/common/ImportDialog.vue';
 import CollegeFormDialog from '@/modules/masterData/components/College/CollegeFormDialog.vue';
 
 import BuildingCityIcon from '@/assets/icons/BuildingCityIcon.vue';
@@ -32,7 +33,29 @@ const {
     handleFilterChange,
     getActionOptions,
     openCreateDialog,
-    saveCollegeForm
+    saveCollegeForm,
+    entityLabel,
+    importOrderHint,
+    canExport,
+    canImport,
+    exportFormats,
+    isExporting,
+    isUploading,
+    isDownloadingTemplate,
+    importDialogVisible,
+    mode,
+    report,
+    hasPreviewed,
+    canCommit,
+    rowsToWrite,
+    openImportDialog,
+    closeImportDialog,
+    setFile,
+    setMode,
+    previewImport,
+    confirmImport,
+    exportList,
+    downloadTemplate
 } = useCollege();
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('collegesOrSchools', 'Colleges / Schools') }]);
@@ -73,6 +96,12 @@ onMounted(() => {
                 :search-placeholder="$lang.searchColleges || 'Search colleges...'"
                 :show-add-button="$can('createCollege')"
                 :show-refresh="true"
+                :show-import="canImport"
+                :show-export="canExport"
+                :export-formats="exportFormats"
+                :export-loading="isExporting"
+                @import="openImportDialog"
+                @export="exportList"
                 @refresh="fetchColleges"
                 @add="openCreateDialog"
                 @search="handleSearch"
@@ -126,5 +155,23 @@ onMounted(() => {
             :type="confirmState.type"
             :loading="confirmState.loading"
             @confirm="confirmState.onConfirm" />
+
+        <ImportDialog
+            :visible="importDialogVisible"
+            :entity-label="entityLabel"
+            :import-order-hint="importOrderHint"
+            :is-uploading="isUploading"
+            :is-downloading-template="isDownloadingTemplate"
+            :report="report"
+            :has-previewed="hasPreviewed"
+            :can-commit="canCommit"
+            :rows-to-write="rowsToWrite"
+            :mode="mode"
+            @update:visible="closeImportDialog"
+            @update:mode="setMode"
+            @file="setFile"
+            @preview="previewImport"
+            @confirm="confirmImport"
+            @template="downloadTemplate" />
     </div>
 </template>

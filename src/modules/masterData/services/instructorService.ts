@@ -24,7 +24,7 @@ export interface InstructorPayload {
     email?: string | null;
     phone?: string | null;
     department_id: number;
-    academic_rank?: string | null;
+    academic_rank_lookup_value_id?: number | null;
     /** The person's optional portal account — not a creator reference. */
     user_id?: number | null;
     can_teach?: boolean;

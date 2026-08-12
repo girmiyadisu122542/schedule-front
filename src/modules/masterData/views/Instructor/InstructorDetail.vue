@@ -98,7 +98,7 @@ onMounted(() => {
                 v-if="instructor?.academic_rank"
                 outlined
                 :variant="STATUS_LIGHT"
-                :label="instructor.academic_rank" />
+                :label="instructor.academic_rank.name" />
             <Badge
                 v-if="instructor?.can_invigilate"
                 :variant="STATUS_SUCCESS"

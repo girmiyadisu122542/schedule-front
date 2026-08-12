@@ -8,7 +8,6 @@ import {
     MAX_CODE_LENGTH,
     MAX_INSTRUCTOR_EMAIL_LENGTH,
     MAX_PHONE_LENGTH,
-    MAX_ACADEMIC_RANK_LENGTH,
     MAX_INSTRUCTOR_WEEKLY_HOURS
 } from '@/config/appConfig';
 
@@ -59,11 +58,7 @@ export const instructorSchema = () => {
                     .number({ message: translations.value.departmentIsRequired || 'Please choose a department' })
                     .int()
                     .positive(translations.value.departmentIsRequired || 'Please choose a department'),
-                academic_rank: z
-                    .string()
-                    .trim()
-                    .max(MAX_ACADEMIC_RANK_LENGTH, translations.value.rankIsTooLong || 'The rank is too long')
-                    .transform((value) => value || null),
+                academic_rank_lookup_value_id: z.number().int().positive().nullable(),
                 // The optional portal account — the person, not a creator.
                 user_id: z.number().int().positive().nullable(),
                 can_teach: z.boolean(),
