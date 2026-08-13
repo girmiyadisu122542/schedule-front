@@ -120,8 +120,8 @@ onMounted(() => {
                     {{ run.scheduled_count }}
                     {{
                         isExamMode
-                            ? $lang.sittingsPlaced || 'sittings placed'
-                            : $lang.meetingsPlaced || 'meetings placed'
+                            ? $lang.sittingsPlaced || 'schedules placed'
+                            : $lang.meetingsPlaced || 'schedules placed'
                     }}
                 </span>
                 <span

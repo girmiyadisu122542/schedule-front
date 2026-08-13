@@ -23,3 +23,18 @@ export type InvigilationAssignmentAllowedAction =
     | 'assignInvigilator'
     | 'respondToInvigilatorAssignment'
     | 'replaceInvigilator';
+
+/**
+ * The request/response exchange between the registrar and the departments.
+ *
+ * `send` is separate from `create` so a clerk may prepare an ask that only a
+ * registrar issues. `respondToInvigilationRequest` is the department's side;
+ * WHICH department a holder speaks for is data — `departments.head_user_id` —
+ * not another permission key.
+ */
+export type InvigilationRequestAllowedAction =
+    | 'seeInvigilationRequest'
+    | 'createInvigilationRequest'
+    | 'updateInvigilationRequest'
+    | 'sendInvigilationRequest'
+    | 'respondToInvigilationRequest';

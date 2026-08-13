@@ -6,10 +6,14 @@ import { useLanguageStore } from '@/stores/languageStore';
 import { useAllowedRoutesStore } from '@/stores/allowedRoutesStore';
 import { useStatusFlow } from '@/composables/useStatusFlow';
 import { useCrudResource } from '@/composables/useCrudResource';
+import { useCurrentSemester } from '@/composables/useCurrentSemester';
+import { useDropdownOptions } from '@/composables/useDropdownOptions';
+import { useSchedulingConstants } from '@/modules/scheduling/composables/useSchedulingConstants';
 import type { LookupValueRef } from '@/composables/useLookupValues';
 import { examScheduleSchema } from '@/modules/scheduling/schemas/examScheduleSchema';
 import { EXAM_SCHEDULE_LOOKUP_TYPE, EXAM_SCHEDULE_STATUS } from '@/modules/scheduling/constants/classScheduleStatus';
 import type { ExamSchedule, ExamScheduleForm } from '@/modules/scheduling/types/examSchedule';
+import type { ScheduleEvent } from '@/modules/scheduling/types/calendar';
 import {
     fetchExamSchedules,
     createExamSchedule,
@@ -23,11 +27,14 @@ import {
 } from '@/modules/scheduling/services/examScheduleService';
 import { readApiErrorMessage } from '@/utils/apiError';
 import type { ActionOption } from '@/components/common/ActionMenu.vue';
-import { STATUS_DANGER } from '@/config/appConfig';
+import type { DropdownOption } from '@/types/CommonTypes';
+import { DROPDOWN_PARAM_KEY, STATUS_DANGER } from '@/config/appConfig';
 
 import SendPlaneIcon from '@/assets/icons/SendPlaneIcon.vue';
 import BanIcon from '@/assets/icons/BanIcon.vue';
 import CheckBadgeIcon from '@/assets/icons/CheckBadgeIcon.vue';
+
+const DAYS_PER_WEEK = 7;
 
 const emptyForm = (): ExamScheduleForm => ({
     course_offering_id: null,
@@ -45,13 +52,21 @@ function examScheduleManager() {
 
     /** Statuses + legal edges, both straight from the backend lookup catalogue. */
     const statusFlow = useStatusFlow(EXAM_SCHEDULE_LOOKUP_TYPE);
+    /** Only for its weekday names — the month grid's column headers. */
+    const schedulingConstants = useSchedulingConstants();
+    const currentSemester = useCurrentSemester();
+    /**
+     * The semester filter's catalogue. A month grid draws one exam period at a
+     * time — without this every semester's sittings would share a calendar.
+     */
+    const semesterDropdown = useDropdownOptions<DropdownOption>('/semesters', { [DROPDOWN_PARAM_KEY]: true });
 
     /** Backend message when there is one, localized fallback otherwise. */
     const genericError = (error: unknown) =>
         readApiErrorMessage(error, customizeLanguageData('somethingWentWrong', 'Something went wrong'));
 
     const columns = computed(() => [
-        { key: 'course_offering', label: customizeLanguageData('courseOffering', 'Offering') },
+        { key: 'course_offering', label: customizeLanguageData('courseCode', 'Course') },
         { key: 'exam_type_code', label: customizeLanguageData('examType', 'Type') },
         { key: 'exam_date', label: customizeLanguageData('examDate', 'Date') },
         { key: 'time_range', label: customizeLanguageData('time', 'Time') },
@@ -61,6 +76,14 @@ function examScheduleManager() {
     ]);
 
     const filters = computed(() => [
+        {
+            label: customizeLanguageData('semester', 'Semester'),
+            key: 'semester_id',
+            options: semesterDropdown.options.value.map((semester: DropdownOption) => ({
+                label: semester.name,
+                value: semester.id
+            }))
+        },
         {
             label: customizeLanguageData('status', 'Status'),
             key: 'status_code',
@@ -74,7 +97,7 @@ function examScheduleManager() {
     const resource = useCrudResource<ExamSchedule, ExamScheduleForm, ExamSchedulePayload>({
         entity: 'ExamSchedule',
         labelKey: 'examSchedule',
-        labelFallback: 'Exam Sitting',
+        labelFallback: 'Exam Schedule',
         // `state` is the conflict-liveness flag, not an is_active toggle.
         hasState: false,
         service: {
@@ -164,12 +187,12 @@ function examScheduleManager() {
 
     const confirmCancel = (schedule: ExamSchedule) => {
         resource.openConfirmDialog({
-            title: customizeLanguageData('cancelSitting', 'Cancel this sitting?'),
+            title: customizeLanguageData('cancelSitting', 'Cancel this schedule?'),
             message: customizeLanguageData(
                 'cancelSittingHint',
-                'The sitting stays on record as cancelled, and its hall and the cohort’s window are freed.'
+                'The schedule stays on record as cancelled, and its hall and the cohort’s window are freed.'
             ),
-            confirmLabel: customizeLanguageData('cancelSittingConfirm', 'Cancel sitting'),
+            confirmLabel: customizeLanguageData('cancelSittingConfirm', 'Cancel schedule'),
             type: STATUS_DANGER,
             itemName: schedule.name,
             run: async () => {
@@ -208,7 +231,7 @@ function examScheduleManager() {
 
         if (allowedRoutesStore.can('confirmExamSchedule') && isAwaitingDepartment(schedule)) {
             options.push({
-                label: customizeLanguageData('confirmSitting', 'Confirm sitting'),
+                label: customizeLanguageData('confirmSitting', 'Confirm schedule'),
                 icon: CheckBadgeIcon,
                 onClick: () => openConfirmDialog(schedule)
             });
@@ -234,7 +257,7 @@ function examScheduleManager() {
                 .some((status: LookupValueRef) => status.code === EXAM_SCHEDULE_STATUS.CANCELLED)
         ) {
             options.push({
-                label: customizeLanguageData('cancelSittingConfirm', 'Cancel sitting'),
+                label: customizeLanguageData('cancelSittingConfirm', 'Cancel schedule'),
                 icon: BanIcon,
                 variant: STATUS_DANGER,
                 onClick: () => confirmCancel(schedule)
@@ -244,10 +267,84 @@ function examScheduleManager() {
         return options;
     };
 
+    /**
+     * The rows as the month grid reads them.
+     *
+     * Every status shows: a sitting still short of publication is dashed, a
+     * cancelled one is struck through. Colour comes from the exam type's own
+     * lookup value, so a final and a makeup are told apart without a legend.
+     */
+    const calendarEvents = computed<ScheduleEvent[]>(() =>
+        resource.items.value.data.map((exam) => ({
+            id: exam.id,
+            title: exam.course_offering?.course_code || exam.course_offering?.name || '—',
+            tooltip: exam.course_offering?.name ?? undefined,
+            courseCode: exam.course_offering?.course_code ?? undefined,
+            courseTitle: exam.course_offering?.course_title ?? undefined,
+            invigilators: exam.invigilators ?? undefined,
+            subtitle: [
+                exam.room?.name || customizeLanguageData('noRoom', 'No hall'),
+                `${exam.required_invigilators} ${customizeLanguageData('invigilators', 'Invigilators')}`
+            ].join(' · '),
+            badge: exam.exam_type?.name || exam.exam_type_code || undefined,
+            start: exam.start_time,
+            end: exam.end_time,
+            date: exam.exam_date,
+            color: exam.exam_type?.color ?? null,
+            statusLabel: exam.status?.name ?? exam.status_code ?? undefined,
+            cohort: {
+                sectionId: exam.section?.id ?? null,
+                sectionLabel: exam.section?.name ?? null,
+                programId: exam.program?.id ?? null,
+                programLabel: exam.program?.name ?? null,
+                departmentId: exam.department?.id ?? null,
+                departmentLabel: exam.department?.name ?? null
+            },
+            isTentative: exam.status_code !== EXAM_SCHEDULE_STATUS.PUBLISHED,
+            isMuted:
+                exam.status_code === EXAM_SCHEDULE_STATUS.CANCELLED ||
+                exam.status_code === EXAM_SCHEDULE_STATUS.REJECTED,
+            record: exam
+        }))
+    );
+
+    /** Monday-first weekday names; anything short of a full week is left to the grid's fallback. */
+    const weekdayNames = computed(() => {
+        const names = schedulingConstants.dayOptions.value.map((day) => day.name);
+
+        return names.length === DAYS_PER_WEEK ? names : undefined;
+    });
+
+    /**
+     * The semester the registrar is actually working in, as a filter.
+     *
+     * The screen used to lean on pagination to keep the list manageable; a
+     * calendar has no pages, so the scope has to be explicit or every
+     * semester's sittings share one month.
+     *
+     * It only RESOLVES the filter — the view applies it, because the view is
+     * what knows to merge in the academic scope at the same time.
+     *
+     * @returns `{ semester_id }`, or empty when no semester is flagged current
+     */
+    const currentSemesterFilter = async (): Promise<Record<string, unknown>> => {
+        await currentSemester.load();
+
+        const semesterId = currentSemester.semesterId.value;
+
+        return semesterId ? { semester_id: semesterId } : {};
+    };
+
     return {
         ...resource,
         exams: resource.items,
         fetchExams: resource.fetchItems,
+        calendarEvents,
+        weekdayNames,
+        schedulingConstants,
+        currentSemesterFilter,
+        semesterDropdown,
+        currentSemester,
         saveExamForm: resource.saveForm,
         getActionOptions,
         isEditable,

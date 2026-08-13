@@ -29,6 +29,8 @@ export interface CoursePayload {
     lab_hours_per_week?: number | null;
     tutorial_hours_per_week?: number | null;
     sessions_per_week?: number | null;
+    /** Null means the study mode's default exam length. */
+    exam_duration_minutes?: number | null;
     is_active?: boolean;
 }
 

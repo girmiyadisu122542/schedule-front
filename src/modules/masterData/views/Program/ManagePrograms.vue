@@ -118,6 +118,24 @@ onMounted(() => {
                     <span class="text-text-secondary">{{ (item as Program).department?.name || '—' }}</span>
                 </template>
 
+                <!-- Which generation grid this programme is scheduled into. -->
+                <template #cell-study_mode="{ item }">
+                    <Badge
+                        v-if="(item as Program).study_mode"
+                        outlined
+                        :variant="STATUS_LIGHT"
+                        :style="{
+                            color: (item as Program).study_mode?.color ?? undefined,
+                            borderColor: (item as Program).study_mode?.color ?? undefined
+                        }"
+                        :label="(item as Program).study_mode?.name ?? ''" />
+                    <span
+                        v-else
+                        class="text-text-tertiary">
+                        {{ $lang.regular || 'Regular' }}
+                    </span>
+                </template>
+
                 <template #cell-degree_level="{ item }">
                     <Badge
                         outlined

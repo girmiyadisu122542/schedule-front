@@ -43,7 +43,7 @@ const meetingColumns = computed(() => [
         format: (row: ClassSchedule) => schedulingConstants.dayName(row.day_of_week)
     },
     { key: 'time_range', label: customizeLanguageData('time', 'Time'), numeric: true },
-    { key: 'name', label: customizeLanguageData('classSchedule', 'Meeting') },
+    { key: 'name', label: customizeLanguageData('classSchedule', 'Class Schedule') },
     {
         key: 'room',
         label: customizeLanguageData('room', 'Room'),
@@ -54,7 +54,7 @@ const meetingColumns = computed(() => [
 const sittingColumns = computed(() => [
     { key: 'exam_date', label: customizeLanguageData('examDate', 'Date'), numeric: true },
     { key: 'time_range', label: customizeLanguageData('time', 'Time'), numeric: true },
-    { key: 'name', label: customizeLanguageData('examSitting', 'Sitting') },
+    { key: 'name', label: customizeLanguageData('examSitting', 'Exam') },
     {
         key: 'room',
         label: customizeLanguageData('examHall', 'Hall'),
@@ -100,8 +100,8 @@ onMounted(() => {
             <DetailField
                 :label="
                     isExamRun
-                        ? $lang.placedSittingsLabel || 'Sittings placed'
-                        : $lang.placedMeetingsLabel || 'Meetings placed'
+                        ? $lang.placedSittingsLabel || 'Schedules placed'
+                        : $lang.placedMeetingsLabel || 'Schedules placed'
                 "
                 :value="run?.scheduled_count"
                 numeric />
@@ -192,14 +192,14 @@ onMounted(() => {
                 :title="$lang.examSchedules || 'Exam Timetable'"
                 :fetcher="() => fetchExamSchedules({ generation_run_id: run!.id, limit: 100 })"
                 :columns="sittingColumns"
-                :empty-text="$lang.noSittingsHere || 'This run produced no sittings.'" />
+                :empty-text="$lang.noSittingsHere || 'This run produced no exam schedules.'" />
 
             <DetailPanel
                 v-else
                 :title="$lang.classSchedules || 'Class Timetable'"
                 :fetcher="() => fetchClassSchedules({ generation_run_id: run!.id, limit: 100 })"
                 :columns="meetingColumns"
-                :empty-text="$lang.noMeetingsHere || 'This run produced no meetings.'" />
+                :empty-text="$lang.noMeetingsHere || 'This run produced no class schedules.'" />
         </template>
     </DetailPage>
 </template>

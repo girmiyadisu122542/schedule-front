@@ -1,6 +1,20 @@
 import type { Pagination, User } from '@/types/CommonTypes';
 import type { LookupValueRef } from '@/composables/useLookupValues';
 import type { ScheduleRef } from '@/modules/scheduling/types/classSchedule';
+
+/**
+ * The exam embed a duty row carries, with the parts a roster prints.
+ *
+ * A duty sheet says "CS101 · NB-301", never the whole composed label — but
+ * `name` keeps that label for tooltips and detail views.
+ */
+export interface DutyExamRef extends ScheduleRef {
+    course_code?: string | null;
+    exam_date?: string | null;
+    time_range?: string | null;
+    room_code?: string | null;
+    room_name?: string | null;
+}
 import type { InstructorRef } from '@/modules/invigilation/types/availability';
 
 /**
@@ -32,7 +46,7 @@ export interface Assignment {
     role_code: string | null;
     status?: LookupValueRef | null;
     role?: LookupValueRef | null;
-    exam_schedule?: ScheduleRef | null;
+    exam_schedule?: DutyExamRef | null;
     instructor?: InstructorRef | null;
     assigned_by?: User | null;
     assigned_at?: string | null;

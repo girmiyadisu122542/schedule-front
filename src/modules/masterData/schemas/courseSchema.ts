@@ -8,7 +8,9 @@ import {
     MAX_DESCRIPTION_LENGTH,
     MAX_ROOM_CODE_LENGTH,
     MAX_COURSE_HOURS,
-    MAX_SESSIONS_PER_WEEK
+    MAX_SESSIONS_PER_WEEK,
+    MIN_EXAM_DURATION_MINUTES,
+    MAX_EXAM_DURATION_MINUTES
 } from '@/config/appConfig';
 
 /**
@@ -94,6 +96,21 @@ export const courseSchema = () => {
                         (value) =>
                             value === null || (Number.isInteger(value) && value > 0 && value <= MAX_SESSIONS_PER_WEEK),
                         translations.value.invalidSessionsPerWeek || 'Enter a plausible number of weekly sessions'
+                    ),
+                // Blank means "use the study mode's default", which is what
+                // most courses want.
+                exam_duration_minutes: z
+                    .string()
+                    .trim()
+                    .transform((value) => (value ? Number(value) : null))
+                    .refine(
+                        (value) =>
+                            value === null ||
+                            (Number.isInteger(value) &&
+                                value >= MIN_EXAM_DURATION_MINUTES &&
+                                value <= MAX_EXAM_DURATION_MINUTES),
+                        translations.value.invalidExamDuration ||
+                            `An exam must run between ${MIN_EXAM_DURATION_MINUTES} and ${MAX_EXAM_DURATION_MINUTES} minutes`
                     ),
                 is_active: z.boolean()
             })

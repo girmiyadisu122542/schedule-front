@@ -1,6 +1,6 @@
 import type { Pagination, User } from '@/types/CommonTypes';
 import type { LookupValueRef } from '@/composables/useLookupValues';
-import type { ScheduleRef } from '@/modules/scheduling/types/classSchedule';
+import type { OfferingRef, ScheduleRef } from '@/modules/scheduling/types/classSchedule';
 
 /**
  * One exam sitting, as `GET /schedule/exam-schedules` emits it (backend
@@ -33,10 +33,18 @@ export interface ExamSchedule {
     confirmation_remark: string | null;
     status?: LookupValueRef | null;
     exam_type?: LookupValueRef | null;
-    course_offering?: ScheduleRef | null;
+    course_offering?: OfferingRef | null;
     semester?: ScheduleRef | null;
     section?: ScheduleRef | null;
+    /** Ownership, one hop through the offering — what the master timetable groups by. */
+    department?: ScheduleRef | null;
+    program?: ScheduleRef | null;
     room?: ScheduleRef | null;
+    /**
+     * Who is on duty at this sitting. `employee_no` IS the invigilator code —
+     * the institution's existing staff number.
+     */
+    invigilators?: { employee_no: string | null; name: string | null; role_code: string | null }[];
     created_by?: User | null;
     confirmed_by?: User | null;
     published_by?: User | null;

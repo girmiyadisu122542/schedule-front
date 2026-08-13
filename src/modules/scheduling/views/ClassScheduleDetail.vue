@@ -42,7 +42,7 @@ onMounted(() => {
         :subtitle="slot"
         :is-loading="isLoading"
         :not-found="notFound"
-        :not-found-title="$lang.classScheduleNotFound || 'Class meeting not found'">
+        :not-found-title="$lang.classScheduleNotFound || 'Class schedule not found'">
         <template #header-actions>
             <Badge
                 v-if="meeting?.session_type"

@@ -10,6 +10,13 @@ const invigilationRoutes: Array<RouteRecordRaw> = [
         name: 'invigilation',
         children: [
             {
+                // The registrar's list and the department's inbox are the same
+                // rows read from different ends — the backend scopes them.
+                path: 'requests',
+                name: 'InvigilationRequests',
+                component: () => import('@/modules/invigilation/views/ManageInvigilationRequests.vue')
+            },
+            {
                 path: 'availabilities',
                 name: 'InvigilatorAvailabilities',
                 component: () => import('@/modules/invigilation/views/ManageAvailabilities.vue')

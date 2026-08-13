@@ -45,6 +45,9 @@ export const programSchema = () => {
                 .number({ message: translations.value.degreeLevelIsRequired || 'Please choose a degree level' })
                 .int()
                 .positive(translations.value.degreeLevelIsRequired || 'Please choose a degree level'),
+            // Optional: a programme with no mode falls back to the regular
+            // grid, which is what most programmes are.
+            study_mode_lookup_value_id: z.number().int().positive().nullable(),
             duration_years: z
                 .string()
                 .trim()

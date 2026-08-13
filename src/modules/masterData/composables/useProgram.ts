@@ -21,6 +21,7 @@ const emptyForm = (): ProgramForm => ({
     code: '',
     department_id: null,
     degree_level_lookup_value_id: null,
+    study_mode_lookup_value_id: null,
     duration_years: '',
     is_active: true
 });
@@ -33,6 +34,7 @@ function programManager() {
         { key: 'code', label: customizeLanguageData('code', 'Code') },
         { key: 'department', label: customizeLanguageData('department', 'Department') },
         { key: 'degree_level', label: customizeLanguageData('degreeLevel', 'Degree Level') },
+        { key: 'study_mode', label: customizeLanguageData('studyMode', 'Study Mode') },
         { key: 'duration_years', label: customizeLanguageData('durationYears', 'Duration') },
         { key: 'is_active', label: customizeLanguageData('state', 'State') }
     ]);
@@ -54,6 +56,7 @@ function programManager() {
             code: program.code,
             department_id: program.department_id,
             degree_level_lookup_value_id: program.degree_level_lookup_value_id,
+            study_mode_lookup_value_id: program.study_mode_lookup_value_id,
             duration_years: String(program.duration_years),
             is_active: program.is_active
         }),

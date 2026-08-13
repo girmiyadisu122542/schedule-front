@@ -5,6 +5,12 @@
  * The frontend only ever compares against these — labels, colours and the legal
  * transition edges all come from the backend lookup catalogue at runtime.
  */
+/**
+ * How a programme is delivered. It is what decides WHICH generation grid an
+ * offering is scheduled into — regular on weekdays, extension at the weekend.
+ */
+export const STUDY_MODE_LOOKUP_TYPE = 'STUDY_MODE';
+
 export const CLASS_SCHEDULE_LOOKUP_TYPE = 'CLASS_SCHEDULE_STATUS';
 export const SESSION_TYPE_LOOKUP_TYPE = 'SESSION_TYPE';
 

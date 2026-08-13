@@ -57,7 +57,7 @@ onMounted(() => load(String(route.params.uuid)));
         :subtitle="when"
         :is-loading="isLoading"
         :not-found="notFound"
-        :not-found-title="$lang.examScheduleNotFound || 'Exam sitting not found'">
+        :not-found-title="$lang.examScheduleNotFound || 'Exam schedule not found'">
         <template #header-actions>
             <Badge
                 v-if="sitting?.exam_type"
@@ -135,7 +135,7 @@ onMounted(() => load(String(route.params.uuid)));
             :title="$lang.invigilatorAssignments || 'Duty Roster'"
             :fetcher="() => fetchAssignments({ exam_schedule_id: sitting!.id, limit: 50 })"
             :columns="dutyColumns"
-            :empty-text="$lang.noDutiesHere || 'Nobody is on duty at this sitting yet.'"
+            :empty-text="$lang.noDutiesHere || 'Nobody is on duty at this exam yet.'"
             to="/invigilation/assignments"
             :see-all-label="$lang.seeAll || 'See all'" />
     </DetailPage>

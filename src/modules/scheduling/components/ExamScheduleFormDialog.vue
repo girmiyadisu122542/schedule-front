@@ -54,7 +54,7 @@ onMounted(() => {
         :no-x-padding="true"
         :plain-background="true"
         :visible="visible"
-        :header="isEditing ? $lang.editSitting || 'Edit Sitting' : $lang.createSitting || 'Place a Sitting'"
+        :header="isEditing ? $lang.editSitting || 'Edit Exam Schedule' : $lang.createSitting || 'Create Exam Schedule'"
         max-width="max-w-3xl"
         @update:visible="emit('update:visible', $event)">
         <div class="mx-4 space-y-7 py-1">
@@ -65,7 +65,7 @@ onMounted(() => {
                 <p class="text-text-tertiary text-xs">
                     {{
                         $lang.sittingOfferingHint ||
-                        'The semester and cohort come from the offering. One sitting per exam type per offering.'
+                        'The semester and cohort come from the offering. One exam schedule per exam type per offering.'
                     }}
                 </p>
 

@@ -170,6 +170,17 @@ onMounted(() => {
                         :message="errors.sessions_per_week"
                         message-type="error"
                         size="normal" />
+                    <InputText
+                        v-model="form.exam_duration_minutes"
+                        :label="$lang.courseExamDuration || 'Exam length (minutes)'"
+                        placeholder="e.g. 180"
+                        :helper-message="
+                            $lang.courseExamDurationHint || 'Leave empty to use the study mode\'s default length.'
+                        "
+                        :invalid="!!errors.exam_duration_minutes"
+                        :message="errors.exam_duration_minutes"
+                        message-type="error"
+                        size="normal" />
                 </div>
             </section>
 

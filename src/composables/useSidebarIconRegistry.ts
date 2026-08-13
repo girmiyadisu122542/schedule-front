@@ -89,6 +89,7 @@ import ClockTimeTimerArrow from '@/assets/icons/ClockTimeTimerArrow.vue';
 
 import MapPin from '@/assets/icons/MapPin.vue';
 import ShieldCheckAltIcon from '@/assets/icons/ShieldCheckAltIcon.vue';
+import SendPlaneIcon from '@/assets/icons/SendPlaneIcon.vue';
 
 export const useSidebarIconRegistry: Record<string, any> = {
     Utensils: Utensils,
@@ -145,6 +146,7 @@ export const useSidebarIconRegistry: Record<string, any> = {
     LayersStackIcon: LayersStackIcon,
     Setting: Setting,
     UserCheckIcon: UserCheckIcon,
+    SendPlaneIcon: SendPlaneIcon,
     InvoiceAccountingPlusAddIcon: InvoiceAccountingPlusAddIcon,
     GiftIcon: GiftIcon,
     ShoppingBagsSelect: ShoppingBagsSelect,
@@ -178,5 +180,5 @@ export const useSidebarIconRegistry: Record<string, any> = {
     CalanderScheduleDiscount: CalendarScheduleDiscount,
     ShipmentDeliveryIcon: ShipmentDeliveryIcon,
     MapPin: MapPin,
-    ShieldCheckAltIcon: ShieldCheckAltIcon,
+    ShieldCheckAltIcon: ShieldCheckAltIcon
 };

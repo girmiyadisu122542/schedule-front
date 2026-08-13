@@ -4,7 +4,8 @@ import type { OfferingAllowedAction } from '@/modules/offerings/constants/allowe
 import type { SchedulingAllowedAction } from '@/modules/scheduling/constants/allowedActions';
 import type {
     InvigilationAllowedAction,
-    InvigilationAssignmentAllowedAction
+    InvigilationAssignmentAllowedAction,
+    InvigilationRequestAllowedAction
 } from '@/modules/invigilation/constants/allowedActions';
 
 export type AllowedAction =
@@ -13,4 +14,5 @@ export type AllowedAction =
     | OfferingAllowedAction
     | SchedulingAllowedAction
     | InvigilationAllowedAction
-    | InvigilationAssignmentAllowedAction;
+    | InvigilationAssignmentAllowedAction
+    | InvigilationRequestAllowedAction;

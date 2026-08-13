@@ -28,6 +28,7 @@ const emptyForm = (): CourseForm => ({
     lab_hours_per_week: '',
     tutorial_hours_per_week: '',
     sessions_per_week: '',
+    exam_duration_minutes: '',
     is_active: true
 });
 
@@ -69,6 +70,7 @@ function courseManager() {
             tutorial_hours_per_week:
                 course.tutorial_hours_per_week != null ? String(course.tutorial_hours_per_week) : '',
             sessions_per_week: course.sessions_per_week != null ? String(course.sessions_per_week) : '',
+            exam_duration_minutes: course.exam_duration_minutes != null ? String(course.exam_duration_minutes) : '',
             is_active: course.is_active
         }),
         detailPath: (course) => `/courses/${course.uuid}`,

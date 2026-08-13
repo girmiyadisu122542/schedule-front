@@ -10,6 +10,20 @@ export interface ScheduleRef {
 }
 
 /**
+ * The offering embed, which carries its parts as well as the composed label.
+ *
+ * A timetable identifies a course by its CODE — it prints bare on a wall chart
+ * where there is no room for the title. `name` keeps the full
+ * "CS101 — Title (Cohort)" for detail pages, dropdowns and tooltips, so no
+ * screen has to split a string apart to get what it needs.
+ */
+export interface OfferingRef extends ScheduleRef {
+    course_code?: string | null;
+    course_title?: string | null;
+    section_label?: string | null;
+}
+
+/**
  * One recurring weekly class meeting, as `GET /schedule/class-schedules` emits
  * it (backend `App\Models\Schedule\ClassSchedule::indexFields`).
  *
@@ -39,9 +53,12 @@ export interface ClassSchedule {
     session_type_code: string | null;
     status?: LookupValueRef | null;
     session_type?: LookupValueRef | null;
-    course_offering?: ScheduleRef | null;
+    course_offering?: OfferingRef | null;
     semester?: ScheduleRef | null;
     section?: ScheduleRef | null;
+    /** Ownership, one hop through the offering — what the master timetable groups by. */
+    department?: ScheduleRef | null;
+    program?: ScheduleRef | null;
     instructor?: ScheduleRef | null;
     room?: ScheduleRef | null;
     created_by?: User | null;

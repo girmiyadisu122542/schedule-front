@@ -56,7 +56,9 @@ onMounted(() => {
         :no-x-padding="true"
         :plain-background="true"
         :visible="visible"
-        :header="isEditing ? $lang.editMeeting || 'Edit Meeting' : $lang.createMeeting || 'Place a Meeting'"
+        :header="
+            isEditing ? $lang.editMeeting || 'Edit Class Schedule' : $lang.createMeeting || 'Create Class Schedule'
+        "
         max-width="max-w-3xl"
         @update:visible="emit('update:visible', $event)">
         <div class="mx-4 space-y-7 py-1">
@@ -178,7 +180,7 @@ onMounted(() => {
                 <p class="text-text-tertiary text-xs">
                     {{
                         $lang.meetingPublishHint ||
-                        'A meeting needs both a room and an instructor before it can be published.'
+                        'A schedule needs both a room and an instructor before it can be published.'
                     }}
                 </p>
             </section>
