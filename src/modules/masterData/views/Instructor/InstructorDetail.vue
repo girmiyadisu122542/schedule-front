@@ -6,7 +6,6 @@ import { useLanguageStore } from '@/stores/languageStore';
 import { useDetailResource } from '@/composables/useDetailResource';
 import { getInstructor } from '@/modules/masterData/services/instructorService';
 import { fetchClassSchedules } from '@/modules/scheduling/services/classScheduleService';
-import { fetchAvailabilities } from '@/modules/invigilation/services/invigilatorAvailabilityService';
 import { fetchAssignments } from '@/modules/invigilation/services/examInvigilatorAssignmentService';
 import { useSchedulingConstants } from '@/modules/scheduling/composables/useSchedulingConstants';
 
@@ -19,7 +18,6 @@ import DetailPanel from '@/components/common/DetailPanel.vue';
 import UserIcon from '@/assets/icons/UserIcon.vue';
 import { STATUS_SUCCESS, STATUS_LIGHT } from '@/config/appConfig';
 import type { ClassSchedule } from '@/modules/scheduling/types/classSchedule';
-import type { Availability } from '@/modules/invigilation/types/availability';
 import type { Assignment } from '@/modules/invigilation/types/assignment';
 
 const route = useRoute();
@@ -32,14 +30,14 @@ const breadcrumbItems = computed(() => [
     { label: instructor.value?.full_name ?? '' }
 ]);
 
-const meetingColumns = computed(() => [
+const sessionColumns = computed(() => [
     {
         key: 'day_of_week',
         label: customizeLanguageData('dayOfWeek', 'Day'),
         format: (row: ClassSchedule) => schedulingConstants.dayName(row.day_of_week)
     },
     { key: 'time_range', label: customizeLanguageData('time', 'Time'), numeric: true },
-    { key: 'name', label: customizeLanguageData('classSchedule', 'Meeting') },
+    { key: 'name', label: customizeLanguageData('classSchedule', 'Class session') },
     {
         key: 'room',
         label: customizeLanguageData('room', 'Room'),
@@ -52,7 +50,7 @@ const dutyColumns = computed(() => [
     { key: 'time_range', label: customizeLanguageData('availabilityWindow', 'Window'), numeric: true },
     {
         key: 'exam_schedule',
-        label: customizeLanguageData('examSitting', 'Sitting'),
+        label: customizeLanguageData('examSitting', 'Exam'),
         format: (row: Assignment) => row.exam_schedule?.name
     },
     {
@@ -65,17 +63,6 @@ const dutyColumns = computed(() => [
         label: customizeLanguageData('status', 'Status'),
         format: (row: Assignment) => row.status?.name
     }
-]);
-
-const availabilityColumns = computed(() => [
-    { key: 'available_date', label: customizeLanguageData('availableDate', 'Date'), numeric: true },
-    { key: 'time_range', label: customizeLanguageData('availabilityWindow', 'Window'), numeric: true },
-    {
-        key: 'semester',
-        label: customizeLanguageData('semester', 'Semester'),
-        format: (row: Availability) => row.semester?.name
-    },
-    { key: 'remark', label: customizeLanguageData('remark', 'Remark') }
 ]);
 
 onMounted(() => {
@@ -136,8 +123,8 @@ onMounted(() => {
             <DetailPanel
                 :title="$lang.teachingLoad || 'Teaching load'"
                 :fetcher="() => fetchClassSchedules({ instructor_id: instructor!.id, limit: 100 })"
-                :columns="meetingColumns"
-                :empty-text="$lang.noMeetingsHere || 'This instructor teaches nothing scheduled yet.'"
+                :columns="sessionColumns"
+                :empty-text="$lang.noClassSessionsHere || 'This instructor teaches nothing scheduled yet.'"
                 to="/timetable"
                 :see-all-label="$lang.seeAll || 'See all'" />
 
@@ -148,15 +135,6 @@ onMounted(() => {
                 :columns="dutyColumns"
                 :empty-text="$lang.noDutiesHere || 'No invigilation duties yet.'"
                 to="/invigilation/assignments"
-                :see-all-label="$lang.seeAll || 'See all'" />
-
-            <DetailPanel
-                v-if="instructor.can_invigilate"
-                :title="$lang.invigilatorAvailabilities || 'Invigilator Availability'"
-                :fetcher="() => fetchAvailabilities({ instructor_id: instructor!.id, limit: 100 })"
-                :columns="availabilityColumns"
-                :empty-text="$lang.noAvailabilityHere || 'The department has offered no windows for this instructor.'"
-                to="/invigilation/availabilities"
                 :see-all-label="$lang.seeAll || 'See all'" />
         </template>
     </DetailPage>

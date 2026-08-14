@@ -41,11 +41,36 @@ export const semesterSchema = () => {
                     .string()
                     .trim()
                     .min(1, translations.value.endDateIsRequired || 'End date is required'),
+                // The exam period is mandatory: the exam generator has to be
+                // told when exams sit, and it is no longer inferred from the
+                // end of term.
+                exam_start_date: z
+                    .string()
+                    .trim()
+                    .min(1, translations.value.examStartDateIsRequired || 'The exam start date is required'),
+                exam_end_date: z
+                    .string()
+                    .trim()
+                    .min(1, translations.value.examEndDateIsRequired || 'The exam end date is required'),
                 is_current: z.boolean()
             })
             .refine((value) => value.end_date > value.start_date, {
                 path: ['end_date'],
                 message: translations.value.endDateMustBeAfterStartDate || 'The end date must fall after the start date'
+            })
+            .refine((value) => value.exam_end_date >= value.exam_start_date, {
+                path: ['exam_end_date'],
+                message: translations.value.examEndAfterExamStart || 'The exam period must end on or after it starts'
+            })
+            // An exam period outside its own term would schedule exams on dates
+            // the semester does not cover — the database refuses it too.
+            .refine((value) => value.exam_start_date >= value.start_date, {
+                path: ['exam_start_date'],
+                message: translations.value.examWithinTerm || 'The exam period must fall inside the semester'
+            })
+            .refine((value) => value.exam_end_date <= value.end_date, {
+                path: ['exam_end_date'],
+                message: translations.value.examWithinTerm || 'The exam period must fall inside the semester'
             })
     );
 };

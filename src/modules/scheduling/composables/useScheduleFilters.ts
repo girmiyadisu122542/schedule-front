@@ -37,6 +37,17 @@ function scheduleFiltersManager() {
     const programId = ref<number | null>(null);
     const sectionId = ref<number | null>(null);
 
+    /**
+     * Which sitting is being looked at — midterm, final, makeup, quiz.
+     *
+     * Deliberately OUTSIDE the college → department → programme → section
+     * cascade: it narrows a different axis entirely, so choosing "final" must
+     * not clear the department, and choosing a department must not clear it.
+     * Only the exam screens set it; the class screens leave it null and it
+     * never reaches the wire.
+     */
+    const examTypeCode = ref<string | null>(null);
+
     const collegeDropdown = useDropdownOptions<DropdownOption>('/colleges', FILTER_PARAMS);
     const departmentDropdown = useDropdownOptions<DropdownOption>('/departments', FILTER_PARAMS);
     const programDropdown = useDropdownOptions<DropdownOption>('/programs', FILTER_PARAMS);
@@ -112,18 +123,24 @@ function scheduleFiltersManager() {
      * guarantees a chosen department sits in the chosen college, so
      * `department_id` alone already says both, at one `whereHas` instead of two.
      */
-    const params = computed<Record<string, number>>(() => {
-        const applied: Record<string, number> = {};
+    const params = computed<Record<string, number | string>>(() => {
+        const applied: Record<string, number | string> = {};
 
         if (sectionId.value) applied.section_id = sectionId.value;
         else if (programId.value) applied.program_id = programId.value;
         else if (departmentId.value) applied.department_id = departmentId.value;
         else if (collegeId.value) applied.college_id = collegeId.value;
 
+        // A separate axis, so it stacks with whatever the cascade produced
+        // rather than replacing it.
+        if (examTypeCode.value) applied.exam_type_code = examTypeCode.value;
+
         return applied;
     });
 
-    const hasAny = computed(() => !!(collegeId.value || departmentId.value || programId.value || sectionId.value));
+    const hasAny = computed(
+        () => !!(collegeId.value || departmentId.value || programId.value || sectionId.value || examTypeCode.value)
+    );
 
     /** A one-line summary of the scope, for a screen that wants to name it. */
     const label = computed(() => {
@@ -146,6 +163,9 @@ function scheduleFiltersManager() {
         departmentId.value = null;
         programId.value = null;
         sectionId.value = null;
+        // Its own axis, so it has to be cleared explicitly — no watcher above
+        // it will do it.
+        examTypeCode.value = null;
     };
 
     /**
@@ -167,6 +187,7 @@ function scheduleFiltersManager() {
         departmentId,
         programId,
         sectionId,
+        examTypeCode,
 
         isRestricted,
         showCollege,

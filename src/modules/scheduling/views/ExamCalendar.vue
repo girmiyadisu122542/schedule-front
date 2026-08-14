@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue';
 
 import { useLanguageStore } from '@/stores/languageStore';
 import { useExamCalendar } from '@/modules/scheduling/composables/useExamCalendar';
+import { useLookupValues, type LookupValueRef } from '@/composables/useLookupValues';
+import { EXAM_TYPE_LOOKUP_TYPE } from '@/modules/scheduling/constants/classScheduleStatus';
 
 import Badge from '@/components/common/Badge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
@@ -20,6 +22,18 @@ import { STATUS_LIGHT } from '@/config/appConfig';
 
 const { customizeLanguageData } = useLanguageStore();
 const { isLoading, events, weekdayNames, sittings, currentSemester, scheduleFilters, load } = useExamCalendar();
+
+/**
+ * Midterm / final / makeup / quiz, for the exam-type filter.
+ *
+ * Straight from the lookup catalogue, so adding an exam type there puts it in
+ * the filter without a code change.
+ */
+const examTypes = useLookupValues(EXAM_TYPE_LOOKUP_TYPE);
+
+const examTypeOptions = computed(() =>
+    examTypes.options.value.map((type: LookupValueRef) => ({ label: type.name, value: type.code }))
+);
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('examCalendar', 'Exam Calendar') }]);
 
@@ -52,6 +66,9 @@ const legend = computed(() => {
 onMounted(() => {
     load();
     scheduleFilters.load();
+    // useLookupValues sits inside a shared composable here, so its auto-fetch
+    // never fires — pull the exam-type catalogue explicitly.
+    examTypes.refetch();
 });
 </script>
 
@@ -103,8 +120,9 @@ onMounted(() => {
 
         <ScheduleFilterPanel
             :hint="
-                $lang.examCalendarFilterHint || 'Narrow the exam period to a college, department, programme or cohort.'
-            " />
+                $lang.examCalendarFilterHint || 'Narrow the exam period to a college, department, programme or section.'
+            "
+            :exam-types="examTypeOptions" />
 
         <MonthCalendarGrid
             v-if="viewMode === SCHEDULE_VIEW.CALENDAR"

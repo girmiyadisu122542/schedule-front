@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 import MainDialog from '@/components/common/MainDialog.vue';
 import MainSelect from '@/components/common/MainSelect.vue';
 import MainButton from '@/components/common/MainButton.vue';
 import InputText from '@/components/common/InputText.vue';
+import TextArea from '@/components/common/TextArea.vue';
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import TimePickerField from '@/components/common/TimePickerField.vue';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
@@ -15,7 +17,7 @@ import { DROPDOWN_PARAM_KEY } from '@/config/appConfig';
 import type { ExamScheduleForm } from '@/modules/scheduling/types/examSchedule';
 import type { DropdownOption } from '@/types/CommonTypes';
 
-defineProps<{
+const props = defineProps<{
     visible: boolean;
     isEditing: boolean;
     isSaving: boolean;
@@ -47,6 +49,37 @@ onMounted(() => {
     roomDropdown.fetchOptions();
     examTypes.refetch();
 });
+/**
+ * Whether the accommodation fields are showing.
+ *
+ * Derived from the form on open — a sitting that already carries an
+ * arrangement must not hide it — but writable afterwards, so switching it off
+ * clears the fields rather than leaving orphaned values to be saved.
+ */
+const hasAccommodation = ref(false);
+
+watch(
+    () => props.visible,
+    (visible: boolean) => {
+        if (visible) {
+            hasAccommodation.value = !!(
+                props.form.accommodation_note ||
+                props.form.accommodation_extra_minutes ||
+                props.form.accommodation_room_id
+            );
+        }
+    },
+    { immediate: true }
+);
+
+watch(hasAccommodation, (on: boolean) => {
+    if (on) return;
+
+    // Turning it off means there is no arrangement, so the fields go with it.
+    props.form.accommodation_note = '';
+    props.form.accommodation_extra_minutes = '';
+    props.form.accommodation_room_id = null;
+});
 </script>
 
 <template>
@@ -65,7 +98,7 @@ onMounted(() => {
                 <p class="text-text-tertiary text-xs">
                     {{
                         $lang.sittingOfferingHint ||
-                        'The semester and cohort come from the offering. One exam schedule per exam type per offering.'
+                        'The semester and section come from the offering. One exam schedule per exam type per offering.'
                     }}
                 </p>
 
@@ -159,6 +192,66 @@ onMounted(() => {
                         message-type="error"
                         size="normal" />
                 </div>
+
+                <!--
+                    ---- Accommodations (C21) ----
+
+                    Collapsed behind a toggle because most sittings need none,
+                    and three permanently visible empty fields make the common
+                    case look unfinished.
+                -->
+                <section class="border-border-subtle rounded-xl border p-4">
+                    <ToggleSwitch
+                        v-model="hasAccommodation"
+                        :label="$lang.hasAccommodation || 'This exam has a special arrangement'" />
+                    <p class="text-text-tertiary mt-1 text-xs">
+                        {{
+                            $lang.accommodationHint ||
+                            'Extra time, a separate room, a reader or a scribe. Recorded here and printed with the duty roster.'
+                        }}
+                    </p>
+
+                    <div
+                        v-if="hasAccommodation"
+                        class="mt-4 space-y-4">
+                        <TextArea
+                            v-model="form.accommodation_note"
+                            :label="$lang.accommodationNote || 'What is needed'"
+                            :rows="2"
+                            :placeholder="
+                                $lang.accommodationNotePlaceholder ||
+                                'e.g. one candidate needs a reader and a separate room'
+                            "
+                            :invalid="!!errors.accommodation_note"
+                            :message="errors.accommodation_note" />
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <InputText
+                                v-model="form.accommodation_extra_minutes"
+                                type="number"
+                                :label="$lang.extraTimeMinutes || 'Extra time (minutes)'"
+                                :invalid="!!errors.accommodation_extra_minutes"
+                                :message="errors.accommodation_extra_minutes"
+                                size="normal" />
+
+                            <MainSelect
+                                v-model="form.accommodation_room_id"
+                                :label-text="$lang.accommodationRoom || 'Separate room'"
+                                :options="roomDropdown.options.value"
+                                option-label="name"
+                                option-value="id"
+                                :placeholder="$lang.selectRoom || 'Select a room'"
+                                size="normal"
+                                search
+                                show-clear
+                                :helper-message="
+                                    $lang.accommodationRoomHint ||
+                                    'Reserved alongside the main hall, not instead of it.'
+                                "
+                                :loading="roomDropdown.loading.value" />
+                        </div>
+                    </div>
+                </section>
 
                 <p class="text-text-tertiary text-xs">
                     {{

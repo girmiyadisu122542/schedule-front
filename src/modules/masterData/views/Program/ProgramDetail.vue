@@ -7,14 +7,14 @@ import { useDetailResource } from '@/composables/useDetailResource';
 import { getProgram } from '@/modules/masterData/services/programService';
 import { fetchSections } from '@/modules/masterData/services/sectionService';
 
-import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import BoolChip from '@/components/common/BoolChip.vue';
 import DetailPage from '@/components/common/DetailPage.vue';
 import DetailField from '@/components/common/DetailField.vue';
 import DetailPanel from '@/components/common/DetailPanel.vue';
 
 import BookIcon from '@/assets/icons/BookIcon.vue';
-import { STATUS_LIGHT } from '@/config/appConfig';
+
 import type { Section } from '@/modules/masterData/types/section';
 
 const route = useRoute();
@@ -51,15 +51,9 @@ onMounted(() => load(String(route.params.uuid)));
         :not-found-title="$lang.programNotFound || 'Program not found'">
         <template #header-actions>
             <!-- Label and colour both come from the lookup value. -->
-            <Badge
+            <StatusBadge
                 v-if="program?.degree_level"
-                outlined
-                :variant="STATUS_LIGHT"
-                :style="{
-                    color: program.degree_level.color ?? undefined,
-                    borderColor: program.degree_level.color ?? undefined
-                }"
-                :label="program.degree_level.name" />
+                :value="program.degree_level" />
             <BoolChip :value="!!program?.is_active" />
         </template>
 
@@ -84,7 +78,7 @@ onMounted(() => load(String(route.params.uuid)));
             :title="$lang.sections || 'Sections'"
             :fetcher="() => fetchSections({ program_id: program!.id, limit: 50 })"
             :columns="sectionColumns"
-            :empty-text="$lang.noSectionsHere || 'No cohorts on this program yet.'"
+            :empty-text="$lang.noSectionsHere || 'No sections on this program yet.'"
             to="/sections"
             :see-all-label="$lang.seeAll || 'See all'" />
     </DetailPage>

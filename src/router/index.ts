@@ -27,11 +27,7 @@ const router = createRouter({
         {
             path: '/',
             component: MainLayout,
-            children: [
-                { path: 'dashboard', name: 'Dashboard', component: Dashboard },
-                ...scheduleRoutes,
-                ...userRoutes
-            ]
+            children: [{ path: 'dashboard', name: 'Dashboard', component: Dashboard }, ...scheduleRoutes, ...userRoutes]
         }
     ],
 

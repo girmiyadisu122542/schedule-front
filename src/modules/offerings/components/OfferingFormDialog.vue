@@ -152,7 +152,7 @@ onMounted(() => {
                 <p class="text-text-tertiary text-xs">
                     {{
                         $lang.offeringCohortHint ||
-                        'Name a section for a single cohort, or just a program for a whole-year lecture. One of the two is required to submit.'
+                        'Name a section for a single group, or just a program for a whole-year lecture. One of the two is required to submit.'
                     }}
                 </p>
 
@@ -163,7 +163,7 @@ onMounted(() => {
                         :options="sectionDropdown.options.value"
                         option-label="name"
                         option-value="id"
-                        :placeholder="$lang.selectSection || 'Select a cohort'"
+                        :placeholder="$lang.selectSection || 'Select a section'"
                         :invalid="!!errors.section_id"
                         :message="errors.section_id"
                         message-type="error"

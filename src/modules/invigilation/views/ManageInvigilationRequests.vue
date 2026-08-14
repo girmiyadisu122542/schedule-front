@@ -6,8 +6,10 @@ import { useAllowedRoutesStore } from '@/stores/allowedRoutesStore';
 import { useInvigilationRequest } from '@/modules/invigilation/composables/useInvigilationRequest';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import MainButton from '@/components/common/MainButton.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
@@ -53,7 +55,8 @@ const {
     isDepartmentView,
     ownShare,
     statusFlow,
-    semesterDropdown
+    semesterDropdown,
+    hasActiveFilters
 } = useInvigilationRequest();
 
 const breadcrumbItems = computed(() => [
@@ -137,6 +140,20 @@ onMounted(() => {
                 @filter-change="handleFilterChange"
                 @update:currentPage="(page: number) => fetchRequests({ page })"
                 @update:limit="(value: number) => fetchRequests({ perPage: value })">
+                <template #empty>
+                    <EmptyState
+                        :title="$lang.noRequestsYet || 'No invigilation requests yet'"
+                        :hint="
+                            $lang.noRequestsYetHint ||
+                            'A request asks departments for a number of invigilators for one examination.'
+                        "
+                        :action-label="
+                            $can('createInvigilationRequest') ? $lang.createRequest || 'Raise a request' : ''
+                        "
+                        :is-filtered="hasActiveFilters"
+                        @action="openCreateDialog" />
+                </template>
+
                 <template #cell-name="{ item }">
                     <span class="text-text-primary font-medium">{{ (item as InvigilationRequest).name }}</span>
                 </template>
@@ -212,18 +229,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-status_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: statusChip(item as InvigilationRequest)?.color ?? undefined,
-                            borderColor: statusChip(item as InvigilationRequest)?.color ?? undefined
-                        }"
-                        :label="
-                            statusChip(item as InvigilationRequest)?.name ||
-                            (item as InvigilationRequest).status?.name ||
-                            '—'
-                        " />
+                    <StatusBadge
+                        :value="statusChip(item as InvigilationRequest)"
+                        :fallback="(item as InvigilationRequest).status?.name" />
                 </template>
 
                 <template #action="{ item }">

@@ -94,6 +94,35 @@ export const scheduleSettingSchema = () => {
                     translations.value.invalidExamPeriodDays ||
                         `The exam period must be between ${MIN_EXAM_PERIOD_DAYS} and ${MAX_EXAM_PERIOD_DAYS} days`
                 ),
+                // ---- what a cohort may be put through ----
+                max_exams_per_day: minutes(
+                    1,
+                    8,
+                    translations.value.invalidMaxExamsPerDay || 'A cohort may sit between 1 and 8 exams in a day'
+                ),
+                min_hours_between_exams: minutes(
+                    0,
+                    72,
+                    translations.value.invalidMinHoursBetweenExams || 'The rest between exams must be 0 to 72 hours'
+                ),
+                // ---- invigilator staffing ----
+                students_per_invigilator: minutes(
+                    5,
+                    200,
+                    translations.value.invalidStudentsPerInvigilator ||
+                        'One invigilator covers between 5 and 200 students'
+                ),
+                min_invigilators_per_room: minutes(
+                    1,
+                    20,
+                    translations.value.invalidMinInvigilators || 'A hall needs between 1 and 20 invigilators'
+                ),
+                // ---- preferences; 0 switches one off ----
+                weight_spread_sessions: minutes(0, 100, translations.value.invalidWeight || 'A weight is 0 to 100'),
+                weight_avoid_gaps: minutes(0, 100, translations.value.invalidWeight || 'A weight is 0 to 100'),
+                weight_room_fit: minutes(0, 100, translations.value.invalidWeight || 'A weight is 0 to 100'),
+                weight_same_building: minutes(0, 100, translations.value.invalidWeight || 'A weight is 0 to 100'),
+                allow_cross_campus_day: z.boolean(),
                 is_active: z.boolean()
             })
             .refine((value) => value.day_end > value.day_start, {
@@ -129,6 +158,15 @@ export const scheduleSettingSchema = () => {
                 exam_duration_minutes: value.exam_duration_minutes,
                 exam_gap_minutes: value.exam_gap_minutes,
                 exam_period_days: value.exam_period_days,
+                max_exams_per_day: value.max_exams_per_day,
+                min_hours_between_exams: value.min_hours_between_exams,
+                students_per_invigilator: value.students_per_invigilator,
+                min_invigilators_per_room: value.min_invigilators_per_room,
+                weight_spread_sessions: value.weight_spread_sessions,
+                weight_avoid_gaps: value.weight_avoid_gaps,
+                weight_room_fit: value.weight_room_fit,
+                weight_same_building: value.weight_same_building,
+                allow_cross_campus_day: value.allow_cross_campus_day,
                 is_active: value.is_active
             }))
     );

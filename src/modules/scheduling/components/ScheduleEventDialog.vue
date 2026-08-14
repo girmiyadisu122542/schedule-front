@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import MainDialog from '@/components/common/MainDialog.vue';
 import MainButton from '@/components/common/MainButton.vue';
-import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 
-import { STATUS_DANGER, STATUS_LIGHT } from '@/config/appConfig';
+import { STATUS_DANGER } from '@/config/appConfig';
 import type { ActionOption } from '@/components/common/ActionMenu.vue';
 
 /** One line of the detail grid. */
@@ -13,7 +13,7 @@ export interface EventField {
 }
 
 /**
- * What a calendar block opens into: the meeting or sitting in full, plus every
+ * What a calendar block opens into: the session or sitting in full, plus every
  * action its current status allows.
  *
  * The actions are the SAME `getActionOptions()` list the table's row menu
@@ -50,12 +50,14 @@ const run = (action: ActionOption) => {
         max-width="max-w-2xl"
         @update:visible="emit('update:visible', $event)">
         <div class="mx-4 space-y-5 py-1">
-            <Badge
+            <!--
+                This dialog receives the label and colour as separate props
+                rather than the lookup value itself, so they are recomposed
+                here into the shape StatusBadge reads.
+            -->
+            <StatusBadge
                 v-if="statusLabel"
-                outlined
-                :variant="STATUS_LIGHT"
-                :style="{ color: statusColor ?? undefined, borderColor: statusColor ?? undefined }"
-                :label="statusLabel" />
+                :value="{ name: statusLabel, color: statusColor }" />
 
             <dl class="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div

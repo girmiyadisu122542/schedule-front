@@ -27,7 +27,7 @@ const {
     events,
     gridDays,
     axisBounds,
-    meetings,
+    sessions,
     instructorId,
     currentSemester,
     scheduleFilters,
@@ -63,8 +63,8 @@ const { isExporting, exportSchedule } = useScheduleExport(() => ({
 const legend = computed(() => {
     const seen = new Map<string, string>();
 
-    meetings.value.forEach((meeting) => {
-        const type = meeting.session_type;
+    sessions.value.forEach((session) => {
+        const type = session.session_type;
         if (type?.name && !seen.has(type.name)) {
             seen.set(type.name, type.color || 'var(--color-schedule-brand-blue)');
         }
@@ -118,7 +118,7 @@ onMounted(() => {
 
         <!-- ---- narrow it to a cohort, or to one teacher ---- -->
         <ScheduleFilterPanel
-            :hint="$lang.timetableFilterHint || 'Narrow the week to a college, department, programme or cohort.'">
+            :hint="$lang.timetableFilterHint || 'Narrow the week to a college, department, programme or section.'">
             <!-- The teacher's own week — the one dimension outside the hierarchy. -->
             <MainSelect
                 v-model="instructorId"
@@ -154,7 +154,7 @@ onMounted(() => {
             :events="events"
             :loading="isLoading"
             :bounds="axisBounds"
-            :empty-label="$lang.noPublishedMeetings || 'Nothing published for this semester yet'" />
+            :empty-label="$lang.noPublishedClassSessions || 'Nothing published for this semester yet'" />
 
         <!-- Every cohort on one sheet, banded by department › programme. -->
         <MasterTimetableGrid
@@ -163,6 +163,6 @@ onMounted(() => {
             :day-bands="master.dayBands.value"
             :groups="master.groups.value"
             :loading="isLoading"
-            :empty-label="$lang.noPublishedMeetings || 'Nothing published for this semester yet'" />
+            :empty-label="$lang.noPublishedClassSessions || 'Nothing published for this semester yet'" />
     </div>
 </template>

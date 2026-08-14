@@ -15,10 +15,10 @@ import type { ScheduleEvent } from '@/modules/scheduling/types/calendar';
 import { readApiErrorMessage } from '@/utils/apiError';
 
 /**
- * The read-only weekly timetable: published meetings for the current semester,
+ * The read-only weekly timetable: published sessions for the current semester,
  * drawn on an hour grid.
  *
- * No edit controls anywhere. Adjusting a meeting happens on the scheduling
+ * No edit controls anywhere. Adjusting a session happens on the scheduling
  * screen, where the draft-only rule is enforced.
  */
 function timetableManager() {
@@ -29,7 +29,7 @@ function timetableManager() {
     const scheduleFilters = useScheduleFilters();
 
     const isLoading = ref(false);
-    const meetings = ref<ClassSchedule[]>([]);
+    const sessions = ref<ClassSchedule[]>([]);
 
     /** Narrow the grid to one teacher; the academic scope lives in the shared filter. */
     const instructorId = ref<number | null>(null);
@@ -39,7 +39,7 @@ function timetableManager() {
         await schedulingConstants.load();
 
         if (!currentSemester.semesterId.value) {
-            meetings.value = [];
+            sessions.value = [];
             return;
         }
 
@@ -53,7 +53,7 @@ function timetableManager() {
                 limit: CALENDAR_PAGE_LIMIT
             });
 
-            meetings.value = result.data;
+            sessions.value = result.data;
         } catch (error: unknown) {
             toast.error(
                 readApiErrorMessage(error, customizeLanguageData('somethingWentWrong', 'Something went wrong'))
@@ -64,38 +64,38 @@ function timetableManager() {
     };
 
     /**
-     * The meetings as the week grid reads them. Colour comes from the session
+     * The sessions as the week grid reads them. Colour comes from the session
      * type's own lookup value, so a lab block looks like a lab everywhere the
      * institution has said it should.
      */
     const events = computed<ScheduleEvent[]>(() =>
-        meetings.value.map((meeting) => ({
-            id: meeting.id,
+        sessions.value.map((session) => ({
+            id: session.id,
             // The block is small and prints on a wall chart: the code is the
             // identifier, the title only clutters it.
-            title: meeting.course_offering?.course_code || meeting.course_offering?.name || '—',
-            tooltip: meeting.course_offering?.name ?? undefined,
-            courseCode: meeting.course_offering?.course_code ?? undefined,
-            courseTitle: meeting.course_offering?.course_title ?? undefined,
+            title: session.course_offering?.course_code || session.course_offering?.name || '—',
+            tooltip: session.course_offering?.name ?? undefined,
+            courseCode: session.course_offering?.course_code ?? undefined,
+            courseTitle: session.course_offering?.course_title ?? undefined,
             subtitle:
-                [meeting.room?.name, meeting.instructor?.name].filter(Boolean).join(' · ') ||
+                [session.room?.name, session.instructor?.name].filter(Boolean).join(' · ') ||
                 customizeLanguageData('noRoom', 'No room'),
-            badge: meeting.session_type?.name ?? undefined,
-            start: meeting.start_time,
-            end: meeting.end_time,
-            day: meeting.day_of_week,
-            color: meeting.session_type?.color ?? null,
-            dayLabel: schedulingConstants.dayName(meeting.day_of_week),
-            statusLabel: meeting.status?.name ?? meeting.status_code ?? undefined,
+            badge: session.session_type?.name ?? undefined,
+            start: session.start_time,
+            end: session.end_time,
+            day: session.day_of_week,
+            color: session.session_type?.color ?? null,
+            dayLabel: schedulingConstants.dayName(session.day_of_week),
+            statusLabel: session.status?.name ?? session.status_code ?? undefined,
             cohort: {
-                sectionId: meeting.section?.id ?? null,
-                sectionLabel: meeting.section?.name ?? null,
-                programId: meeting.program?.id ?? null,
-                programLabel: meeting.program?.name ?? null,
-                departmentId: meeting.department?.id ?? null,
-                departmentLabel: meeting.department?.name ?? null
+                sectionId: session.section?.id ?? null,
+                sectionLabel: session.section?.name ?? null,
+                programId: session.program?.id ?? null,
+                programLabel: session.program?.name ?? null,
+                departmentId: session.department?.id ?? null,
+                departmentLabel: session.department?.name ?? null
             },
-            record: meeting
+            record: session
         }))
     );
 
@@ -103,13 +103,13 @@ function timetableManager() {
         weekGridDays(
             schedulingConstants.dayOptions.value,
             schedulingConstants.teachingDays.value,
-            meetings.value.map((meeting) => meeting.day_of_week)
+            sessions.value.map((session) => session.day_of_week)
         )
     );
 
     const axisBounds = computed(() => axisBoundsFromSlots(schedulingConstants.timeSlots.value));
 
-    const isEmpty = computed(() => !isLoading.value && meetings.value.length === 0);
+    const isEmpty = computed(() => !isLoading.value && sessions.value.length === 0);
 
     /**
      * The filters apply themselves — a grid that needs an Apply click to agree
@@ -127,7 +127,7 @@ function timetableManager() {
 
     return {
         isLoading,
-        meetings,
+        sessions,
         events,
         gridDays,
         axisBounds,

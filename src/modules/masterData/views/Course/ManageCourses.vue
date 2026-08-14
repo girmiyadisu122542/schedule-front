@@ -7,6 +7,7 @@ import { useLookupValues } from '@/composables/useLookupValues';
 import { LOOKUP_TYPE } from '@/modules/masterData/constants/lookupTypes';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
@@ -66,7 +67,7 @@ const breadcrumbItems = computed(() => [{ label: customizeLanguageData('courses'
 /** Label and colour both come from the lookup value — never a hardcoded string. */
 const courseTypeChip = (course: Course) => courseTypes.resolve(course.course_type_code);
 
-/** "3L + 3Lab + 1T ×2/wk" — what the generator will fan out into meetings. */
+/** "3L + 3Lab + 1T ×2/wk" — what the generator will fan out into sessions. */
 const weeklyLoadOf = (course: Course) => {
     const parts = [
         course.lecture_hours_per_week ? `${course.lecture_hours_per_week}L` : null,
@@ -137,14 +138,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-course_type_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: courseTypeChip(item as Course)?.color ?? undefined,
-                            borderColor: courseTypeChip(item as Course)?.color ?? undefined
-                        }"
-                        :label="courseTypeChip(item as Course)?.name || (item as Course).course_type?.name || '—'" />
+                    <StatusBadge
+                        :value="courseTypeChip(item as Course)"
+                        :fallback="(item as Course).course_type?.name" />
                 </template>
 
                 <template #cell-credit_hours="{ item }">

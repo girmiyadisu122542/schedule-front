@@ -167,7 +167,7 @@ onMounted(() => {
                 <div class="border-border-subtle mt-3 border-t pt-3">
                     <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
                         <p class="text-text-tertiary text-xs">
-                            {{ $lang.examWindowsPreview || 'Exam sittings at the default length' }}
+                            {{ $lang.examWindowsPreview || 'Exam sessions at the default length' }}
                         </p>
                         <p class="text-text-tertiary text-xs">
                             {{ examDayNames(setting) }} · {{ setting.exam_duration_minutes }}′ ·
@@ -185,7 +185,7 @@ onMounted(() => {
                         <span
                             v-if="!setting.exam_windows?.length"
                             class="text-text-tertiary text-xs">
-                            {{ $lang.noExamWindows || 'No sittings fit in the exam day.' }}
+                            {{ $lang.noExamWindows || 'No exam sessions fit in the exam day.' }}
                         </span>
                     </div>
                 </div>

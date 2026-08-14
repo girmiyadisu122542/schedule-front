@@ -24,7 +24,7 @@ const scheduleRoutes: Array<RouteRecordRaw> = [
     ...invigilationRoutes,
 
     // Reports & notifications
-    { path: 'reports', name: 'Reports', component: () => import('@/views/Reports/Reports.vue') },
+    { path: 'reports', name: 'Reports', component: () => import('@/modules/reports/views/Reports.vue') },
     { path: 'notifications', name: 'Notifications', component: () => import('@/views/Notifications/Notifications.vue') }
 ];
 

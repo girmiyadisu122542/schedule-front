@@ -10,12 +10,13 @@ import { fetchClassSchedules } from '@/modules/scheduling/services/classSchedule
 import { fetchExamSchedules } from '@/modules/scheduling/services/examScheduleService';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import DetailPage from '@/components/common/DetailPage.vue';
 import DetailField from '@/components/common/DetailField.vue';
 import DetailPanel from '@/components/common/DetailPanel.vue';
 
 import ClockTimeTimerArrow from '@/assets/icons/ClockTimeTimerArrow.vue';
-import { STATUS_LIGHT, STATUS_SUCCESS } from '@/config/appConfig';
+import { STATUS_SUCCESS } from '@/config/appConfig';
 import type { Offering } from '@/modules/offerings/types/offering';
 import type { ClassSchedule } from '@/modules/scheduling/types/classSchedule';
 import type { ExamSchedule } from '@/modules/scheduling/types/examSchedule';
@@ -44,8 +45,8 @@ const offeringColumns = computed(() => [
     }
 ]);
 
-const meetingColumns = computed(() => [
-    { key: 'name', label: customizeLanguageData('classSchedule', 'Meeting') },
+const sessionColumns = computed(() => [
+    { key: 'name', label: customizeLanguageData('classSchedule', 'Class session') },
     { key: 'time_range', label: customizeLanguageData('time', 'Time'), numeric: true },
     {
         key: 'room',
@@ -60,7 +61,7 @@ const meetingColumns = computed(() => [
 ]);
 
 const sittingColumns = computed(() => [
-    { key: 'name', label: customizeLanguageData('examSitting', 'Sitting') },
+    { key: 'name', label: customizeLanguageData('examSitting', 'Exam') },
     { key: 'exam_date', label: customizeLanguageData('examDate', 'Date'), numeric: true },
     { key: 'time_range', label: customizeLanguageData('time', 'Time'), numeric: true },
     {
@@ -87,15 +88,9 @@ onMounted(() => load(String(route.params.uuid)));
                 v-if="semester?.is_current"
                 :variant="STATUS_SUCCESS"
                 :label="$lang.currentSemester || 'Current semester'" />
-            <Badge
+            <StatusBadge
                 v-if="semester?.status"
-                outlined
-                :variant="STATUS_LIGHT"
-                :style="{
-                    color: semester.status.color ?? undefined,
-                    borderColor: semester.status.color ?? undefined
-                }"
-                :label="semester.status.name" />
+                :value="semester.status" />
         </template>
 
         <template #fields>
@@ -128,8 +123,8 @@ onMounted(() => load(String(route.params.uuid)));
             <DetailPanel
                 :title="$lang.classSchedules || 'Class Timetable'"
                 :fetcher="() => fetchClassSchedules({ semester_id: semester!.id, limit: 50 })"
-                :columns="meetingColumns"
-                :empty-text="$lang.noMeetingsHere || 'Nothing scheduled this semester yet.'"
+                :columns="sessionColumns"
+                :empty-text="$lang.noClassSessionsHere || 'Nothing scheduled this semester yet.'"
                 to="/scheduling/classes"
                 :see-all-label="$lang.seeAll || 'See all'" />
 

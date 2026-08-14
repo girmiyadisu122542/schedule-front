@@ -29,7 +29,7 @@ export function weeklyMasterColumns(days: DayOption[], slots: TimeSlot[]): Maste
  * Which column an event belongs in.
  *
  * The slot grid is what the generator places into, but a registrar may place a
- * meeting by hand at any time — so an event that matches no slot exactly goes
+ * session by hand at any time — so an event that matches no slot exactly goes
  * into the last slot that has already STARTED by then, and only falls to the
  * first column if it starts before the teaching day does. Nothing is dropped:
  * a master timetable that quietly omits an off-grid class is worse than one

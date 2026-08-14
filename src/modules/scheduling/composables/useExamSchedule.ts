@@ -9,9 +9,13 @@ import { useCrudResource } from '@/composables/useCrudResource';
 import { useCurrentSemester } from '@/composables/useCurrentSemester';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
 import { useSchedulingConstants } from '@/modules/scheduling/composables/useSchedulingConstants';
-import type { LookupValueRef } from '@/composables/useLookupValues';
+import { useLookupValues, type LookupValueRef } from '@/composables/useLookupValues';
 import { examScheduleSchema } from '@/modules/scheduling/schemas/examScheduleSchema';
-import { EXAM_SCHEDULE_LOOKUP_TYPE, EXAM_SCHEDULE_STATUS } from '@/modules/scheduling/constants/classScheduleStatus';
+import {
+    EXAM_SCHEDULE_LOOKUP_TYPE,
+    EXAM_SCHEDULE_STATUS,
+    EXAM_TYPE_LOOKUP_TYPE
+} from '@/modules/scheduling/constants/classScheduleStatus';
 import type { ExamSchedule, ExamScheduleForm } from '@/modules/scheduling/types/examSchedule';
 import type { ScheduleEvent } from '@/modules/scheduling/types/calendar';
 import {
@@ -22,6 +26,7 @@ import {
     confirmExamSchedule,
     publishExamSchedule,
     cancelExamSchedule,
+    pinExamSchedule,
     type ExamScheduleListParams,
     type ExamSchedulePayload
 } from '@/modules/scheduling/services/examScheduleService';
@@ -32,7 +37,9 @@ import { DROPDOWN_PARAM_KEY, STATUS_DANGER } from '@/config/appConfig';
 
 import SendPlaneIcon from '@/assets/icons/SendPlaneIcon.vue';
 import BanIcon from '@/assets/icons/BanIcon.vue';
+import PinnedIcon from '@/assets/icons/PinnedIcon.vue';
 import CheckBadgeIcon from '@/assets/icons/CheckBadgeIcon.vue';
+import ShieldCheckAltIcon from '@/assets/icons/ShieldCheckAltIcon.vue';
 
 const DAYS_PER_WEEK = 7;
 
@@ -43,7 +50,10 @@ const emptyForm = (): ExamScheduleForm => ({
     exam_date: '',
     start_time: '',
     end_time: '',
-    required_invigilators: '1'
+    required_invigilators: '1',
+    accommodation_note: '',
+    accommodation_extra_minutes: '',
+    accommodation_room_id: null
 });
 
 function examScheduleManager() {
@@ -75,6 +85,9 @@ function examScheduleManager() {
         { key: 'status_code', label: customizeLanguageData('status', 'Status') }
     ]);
 
+    /** Midterm / final / makeup / quiz — the exam-type filter's options. */
+    const examTypes = useLookupValues(EXAM_TYPE_LOOKUP_TYPE);
+
     const filters = computed(() => [
         {
             label: customizeLanguageData('semester', 'Semester'),
@@ -82,6 +95,17 @@ function examScheduleManager() {
             options: semesterDropdown.options.value.map((semester: DropdownOption) => ({
                 label: semester.name,
                 value: semester.id
+            }))
+        },
+        {
+            // Midterm, final, makeup, quiz. A registrar looks at one sitting at
+            // a time — mixing a midterm week into a finals list is noise, and
+            // the backend has always accepted this filter.
+            label: customizeLanguageData('examType', 'Exam type'),
+            key: 'exam_type_code',
+            options: examTypes.options.value.map((type: LookupValueRef) => ({
+                label: type.name,
+                value: type.code
             }))
         },
         {
@@ -114,7 +138,12 @@ function examScheduleManager() {
             exam_date: schedule.exam_date,
             start_time: schedule.start_time,
             end_time: schedule.end_time,
-            required_invigilators: String(schedule.required_invigilators)
+            required_invigilators: String(schedule.required_invigilators),
+            accommodation_note: schedule.accommodation_note ?? '',
+            accommodation_extra_minutes: schedule.accommodation_extra_minutes
+                ? String(schedule.accommodation_extra_minutes)
+                : '',
+            accommodation_room_id: schedule.accommodation_room_id ?? null
         }),
         detailPath: (schedule) => `/scheduling/exams/${schedule.uuid}`,
         schema: examScheduleSchema,
@@ -190,7 +219,7 @@ function examScheduleManager() {
             title: customizeLanguageData('cancelSitting', 'Cancel this schedule?'),
             message: customizeLanguageData(
                 'cancelSittingHint',
-                'The schedule stays on record as cancelled, and its hall and the cohort’s window are freed.'
+                'The schedule stays on record as cancelled, and its hall and the section’s window are freed.'
             ),
             confirmLabel: customizeLanguageData('cancelSittingConfirm', 'Cancel schedule'),
             type: STATUS_DANGER,
@@ -207,59 +236,121 @@ function examScheduleManager() {
      * offered — `lookup_transitions` is the authority, and these checks only
      * mirror it.
      */
+    /**
+     * Pin or unpin a draft sitting, so the next generation run schedules
+     * around it rather than replacing it.
+     */
+    const togglePin = (schedule: ExamSchedule) => runAction(() => pinExamSchedule(schedule.id, !schedule.is_pinned));
+
+    /** Which sitting's invigilators are open, if any. */
+    const invigilatorsDialogVisible = ref(false);
+    const invigilatorsTarget = ref<ExamSchedule | null>(null);
+
+    const openInvigilators = (schedule: ExamSchedule) => {
+        invigilatorsTarget.value = schedule;
+        invigilatorsDialogVisible.value = true;
+    };
+
+    /**
+     * The row menu, in three named sections.
+     *
+     * A flat list of eight actions is a wall — the reader has to check every
+     * line to find the one they want, and the destructive ones sit next to the
+     * routine ones with nothing between them. Grouped, it reads as three short
+     * lists: look at it, staff it, move it along — with cancelling separated at
+     * the bottom where a mis-click is least likely to land.
+     *
+     * The lifecycle section shows only the moves that are legal from where the
+     * sitting actually is, which the transition catalogue already decides.
+     */
     const getActionOptions = (schedule: ExamSchedule): ActionOption[] => {
         const options: ActionOption[] = [];
 
-        // Reading a sitting is not an edit — every row gets the detail link,
-        // whatever its status.
+        const canReachStatus = (code: string) =>
+            statusFlow.allowedTargets(schedule.status_code).some((status: LookupValueRef) => status.code === code);
+
+        // ---- ungrouped: reading a sitting is not an edit ----
         const detail = resource.getDetailOption(schedule);
         if (detail) {
             options.push(detail);
         }
 
-        if (isEditable(schedule)) {
-            options.push(...resource.getActionOptions(schedule, false));
+        // ---- Staffing ----
+        // Available at every status: a published sitting still loses an
+        // invigilator to illness, and that has to be fixable without
+        // unpublishing the exam.
+        if (allowedRoutesStore.can('assignInvigilator')) {
+            options.push({
+                label: customizeLanguageData('manageInvigilators', 'Invigilators'),
+                icon: ShieldCheckAltIcon,
+                group: customizeLanguageData('staffing', 'Staffing'),
+                onClick: () => openInvigilators(schedule)
+            });
+        }
 
-            if (allowedRoutesStore.can('confirmExamSchedule')) {
+        // ---- Edit ----
+        if (isEditable(schedule)) {
+            resource.getActionOptions(schedule, false).forEach((option: ActionOption) => {
                 options.push({
-                    label: customizeLanguageData('sendForConfirmation', 'Send for confirmation'),
-                    icon: SendPlaneIcon,
-                    onClick: () => sendForConfirmation(schedule)
+                    ...option,
+                    // Deleting a draft belongs with the destructive moves, not
+                    // beside Edit where the cursor already is.
+                    group:
+                        option.variant === STATUS_DANGER
+                            ? customizeLanguageData('dangerZone', 'Careful')
+                            : customizeLanguageData('editGroup', 'Edit')
+                });
+            });
+
+            if (allowedRoutesStore.can('updateExamSchedule')) {
+                options.push({
+                    label: schedule.is_pinned
+                        ? customizeLanguageData('unpinSchedule', 'Unpin')
+                        : customizeLanguageData('pinSchedule', 'Pin — keep through regeneration'),
+                    icon: PinnedIcon,
+                    group: customizeLanguageData('editGroup', 'Edit'),
+                    onClick: () => togglePin(schedule)
                 });
             }
+        }
+
+        // ---- Workflow: only the next legal step ----
+        const workflow = customizeLanguageData('workflowGroup', 'Workflow');
+
+        if (isEditable(schedule) && allowedRoutesStore.can('confirmExamSchedule')) {
+            options.push({
+                label: customizeLanguageData('sendForConfirmation', 'Send for confirmation'),
+                icon: SendPlaneIcon,
+                group: workflow,
+                onClick: () => sendForConfirmation(schedule)
+            });
         }
 
         if (allowedRoutesStore.can('confirmExamSchedule') && isAwaitingDepartment(schedule)) {
             options.push({
                 label: customizeLanguageData('confirmSitting', 'Confirm schedule'),
                 icon: CheckBadgeIcon,
+                group: workflow,
                 onClick: () => openConfirmDialog(schedule)
             });
         }
 
-        if (
-            allowedRoutesStore.can('publishExamSchedule') &&
-            statusFlow
-                .allowedTargets(schedule.status_code)
-                .some((status: LookupValueRef) => status.code === EXAM_SCHEDULE_STATUS.PUBLISHED)
-        ) {
+        if (allowedRoutesStore.can('publishExamSchedule') && canReachStatus(EXAM_SCHEDULE_STATUS.PUBLISHED)) {
             options.push({
                 label: customizeLanguageData('publishSitting', 'Publish'),
                 icon: SendPlaneIcon,
+                group: workflow,
                 onClick: () => publish(schedule)
             });
         }
 
-        if (
-            allowedRoutesStore.can('cancelExamSchedule') &&
-            statusFlow
-                .allowedTargets(schedule.status_code)
-                .some((status: LookupValueRef) => status.code === EXAM_SCHEDULE_STATUS.CANCELLED)
-        ) {
+        // ---- Careful ----
+        if (allowedRoutesStore.can('cancelExamSchedule') && canReachStatus(EXAM_SCHEDULE_STATUS.CANCELLED)) {
             options.push({
                 label: customizeLanguageData('cancelSittingConfirm', 'Cancel schedule'),
                 icon: BanIcon,
                 variant: STATUS_DANGER,
+                group: customizeLanguageData('dangerZone', 'Careful'),
                 onClick: () => confirmCancel(schedule)
             });
         }
@@ -350,6 +441,10 @@ function examScheduleManager() {
         isEditable,
 
         statusFlow,
+        examTypes,
+        invigilatorsDialogVisible,
+        invigilatorsTarget,
+        openInvigilators,
         isSavingAction,
         confirmDialogVisible,
         confirmTarget,

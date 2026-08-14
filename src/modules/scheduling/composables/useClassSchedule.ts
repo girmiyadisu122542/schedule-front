@@ -22,6 +22,9 @@ import {
     deleteClassSchedule,
     publishClassSchedule,
     cancelClassSchedule,
+    pinClassSchedule,
+    confirmClassSchedule,
+    returnClassScheduleToDraft,
     type ClassScheduleListParams,
     type ClassSchedulePayload
 } from '@/modules/scheduling/services/classScheduleService';
@@ -31,7 +34,9 @@ import type { DropdownOption } from '@/types/CommonTypes';
 import { DROPDOWN_PARAM_KEY, STATUS_DANGER } from '@/config/appConfig';
 
 import SendPlaneIcon from '@/assets/icons/SendPlaneIcon.vue';
+import PinnedIcon from '@/assets/icons/PinnedIcon.vue';
 import BanIcon from '@/assets/icons/BanIcon.vue';
+import CheckCircle from '@/assets/icons/CheckCircle.vue';
 
 const emptyForm = (): ClassScheduleForm => ({
     course_offering_id: null,
@@ -53,7 +58,7 @@ function classScheduleManager() {
     const currentSemester = useCurrentSemester();
     /**
      * The semester filter's catalogue. A week grid draws one semester's worth of
-     * meetings at a time — without this the grid would stack every semester on
+     * sessions at a time — without this the grid would stack every semester on
      * the same Monday.
      */
     const semesterDropdown = useDropdownOptions<DropdownOption>('/semesters', { [DROPDOWN_PARAM_KEY]: true });
@@ -137,7 +142,7 @@ function classScheduleManager() {
 
     /**
      * Save one inline-edited field. The row supplies every other value, because
-     * the backend Form Request validates the whole meeting, not a patch — see
+     * the backend Form Request validates the whole session, not a patch — see
      * CLAUDE Sec. 10.9.
      *
      * The list is refetched either way: on success to pick up the new
@@ -202,12 +207,12 @@ function classScheduleManager() {
 
     const confirmCancel = (schedule: ClassSchedule) => {
         resource.openConfirmDialog({
-            title: customizeLanguageData('cancelMeeting', 'Cancel this schedule?'),
+            title: customizeLanguageData('cancelClassSession', 'Cancel this schedule?'),
             message: customizeLanguageData(
-                'cancelMeetingHint',
+                'cancelClassSessionHint',
                 'The schedule stays on record as cancelled, and its room, instructor and section slot are freed.'
             ),
-            confirmLabel: customizeLanguageData('cancelMeetingConfirm', 'Cancel schedule'),
+            confirmLabel: customizeLanguageData('cancelClassSessionConfirm', 'Cancel schedule'),
             type: STATUS_DANGER,
             itemName: schedule.name,
             run: async () => {
@@ -226,36 +231,158 @@ function classScheduleManager() {
 
     /**
      * Publish / cancel on top of the factory's Edit and Delete. A published or
-     * cancelled meeting offers neither write action — the backend refuses them
+     * cancelled session offers neither write action — the backend refuses them
      * there, so showing them would only mislead.
      */
+    /**
+     * Pin or unpin a draft session.
+     *
+     * A pinned session survives the next generation run and, being still live,
+     * keeps its room, instructor and section slot reserved — so the run
+     * schedules around it rather than over it.
+     */
+    /**
+     * Move a session through the department confirmation step.
+     *
+     * The backend decides whether this asks for confirmation or gives it, from
+     * where the session already is — so one action serves both sides.
+     */
+    const confirm = async (schedule: ClassSchedule) => {
+        isPublishing.value = true;
+        try {
+            const result = await confirmClassSchedule(schedule.id);
+            toast.success(result.message ?? customizeLanguageData('savedSuccessfully', 'Saved successfully'));
+            await resource.fetchItems();
+        } catch (error: unknown) {
+            toast.error(genericError(error));
+        } finally {
+            isPublishing.value = false;
+        }
+    };
+
+    /** Send a session back to draft, with the department's reason recorded. */
+    const sendBack = async (schedule: ClassSchedule) => {
+        isPublishing.value = true;
+        try {
+            const result = await returnClassScheduleToDraft(schedule.id);
+            toast.success(result.message ?? customizeLanguageData('savedSuccessfully', 'Saved successfully'));
+            await resource.fetchItems();
+        } catch (error: unknown) {
+            toast.error(genericError(error));
+        } finally {
+            isPublishing.value = false;
+        }
+    };
+
+    const togglePin = async (schedule: ClassSchedule) => {
+        isPublishing.value = true;
+        try {
+            const result = await pinClassSchedule(schedule.id, !schedule.is_pinned);
+            toast.success(result.message ?? customizeLanguageData('savedSuccessfully', 'Saved successfully'));
+            await resource.fetchItems();
+        } catch (error: unknown) {
+            toast.error(genericError(error));
+        } finally {
+            isPublishing.value = false;
+        }
+    };
+
     const getActionOptions = (schedule: ClassSchedule): ActionOption[] => {
         const options: ActionOption[] = [];
 
-        // Reading a meeting is not an edit — every row gets the detail link,
-        // whatever its status.
+        const editGroup = customizeLanguageData('editGroup', 'Edit');
+        const workflow = customizeLanguageData('workflowGroup', 'Workflow');
+        const careful = customizeLanguageData('dangerZone', 'Careful');
+
+        // ---- ungrouped: reading a session is not an edit ----
         const detail = resource.getDetailOption(schedule);
         if (detail) {
             options.push(detail);
         }
 
+        // ---- Edit ----
         if (isEditable(schedule)) {
-            options.push(...resource.getActionOptions(schedule, false));
+            resource.getActionOptions(schedule, false).forEach((option: ActionOption) => {
+                options.push({
+                    ...option,
+                    // Deleting belongs with the destructive moves, not beside
+                    // Edit where the cursor already is.
+                    group: option.variant === STATUS_DANGER ? careful : editGroup
+                });
+            });
+
+            if (allowedRoutesStore.can('updateClassSchedule')) {
+                options.push({
+                    label: schedule.is_pinned
+                        ? customizeLanguageData('unpinSchedule', 'Unpin')
+                        : customizeLanguageData('pinSchedule', 'Pin — keep through regeneration'),
+                    icon: PinnedIcon,
+                    group: editGroup,
+                    onClick: () => togglePin(schedule)
+                });
+            }
+
+            // ---- Workflow ----
+            if (allowedRoutesStore.can('confirmClassSchedule')) {
+                options.push({
+                    label: customizeLanguageData('sendForConfirmation', 'Send to department'),
+                    icon: SendPlaneIcon,
+                    group: workflow,
+                    onClick: () => confirm(schedule)
+                });
+            }
 
             if (allowedRoutesStore.can('publishClassSchedule')) {
                 options.push({
-                    label: customizeLanguageData('publishMeeting', 'Publish'),
+                    label: customizeLanguageData('publishClassSession', 'Publish'),
                     icon: SendPlaneIcon,
+                    group: workflow,
                     onClick: () => publish(schedule)
                 });
             }
         }
 
+        // The department's own move, on a session waiting for it.
+        if (
+            schedule.status_code === CLASS_SCHEDULE_STATUS.PENDING_CONFIRMATION &&
+            allowedRoutesStore.can('confirmClassSchedule')
+        ) {
+            options.push(
+                {
+                    label: customizeLanguageData('confirmClassSession', 'Confirm'),
+                    icon: CheckCircle,
+                    group: workflow,
+                    onClick: () => confirm(schedule)
+                },
+                {
+                    label: customizeLanguageData('returnToDraft', 'Send back for rework'),
+                    icon: BanIcon,
+                    group: workflow,
+                    onClick: () => sendBack(schedule)
+                }
+            );
+        }
+
+        // Confirmed and waiting to go out.
+        if (
+            schedule.status_code === CLASS_SCHEDULE_STATUS.CONFIRMED &&
+            allowedRoutesStore.can('publishClassSchedule')
+        ) {
+            options.push({
+                label: customizeLanguageData('publishClassSession', 'Publish'),
+                icon: SendPlaneIcon,
+                group: workflow,
+                onClick: () => publish(schedule)
+            });
+        }
+
+        // ---- Careful ----
         if (allowedRoutesStore.can('cancelClassSchedule') && schedule.status_code === CLASS_SCHEDULE_STATUS.PUBLISHED) {
             options.push({
-                label: customizeLanguageData('cancelMeetingConfirm', 'Cancel schedule'),
+                label: customizeLanguageData('cancelClassSessionConfirm', 'Cancel schedule'),
                 icon: BanIcon,
                 variant: STATUS_DANGER,
+                group: careful,
                 onClick: () => confirmCancel(schedule)
             });
         }
@@ -267,7 +394,7 @@ function classScheduleManager() {
      * The rows as the week grid reads them.
      *
      * Unlike the read-only timetable, this grid shows every status — a draft is
-     * dashed, a cancelled meeting is struck through — because those are exactly
+     * dashed, a cancelled session is struck through — because those are exactly
      * the states this screen exists to move.
      */
     const calendarEvents = computed<ScheduleEvent[]>(() =>

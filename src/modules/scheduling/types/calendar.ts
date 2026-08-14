@@ -1,7 +1,7 @@
 /**
  * The shape the calendar grids read.
  *
- * Neither grid knows what a class meeting or an exam sitting is — a view maps
+ * Neither grid knows what a class session or an exam sitting is — a view maps
  * its own rows onto `ScheduleEvent` and keeps the original on `record`, which
  * comes straight back on the `select` event so the host can act on it.
  */
@@ -53,7 +53,7 @@ export interface ScheduleEvent {
     isTentative?: boolean;
     /**
      * Cancelled work is dimmed rather than hidden — a reader looking for a
-     * meeting that used to be there should find it crossed out, not absent.
+     * session that used to be there should find it crossed out, not absent.
      */
     isMuted?: boolean;
     /**

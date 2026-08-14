@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 
 import { useLanguageStore } from '@/stores/languageStore';
 import { useAllowedRoutesStore } from '@/stores/allowedRoutesStore';
 import { useClassSchedule } from '@/modules/scheduling/composables/useClassSchedule';
 import { useScheduleFilters } from '@/modules/scheduling/composables/useScheduleFilters';
+import { updateClassSchedule } from '@/modules/scheduling/services/classScheduleService';
+import { CLASS_SCHEDULE_STATUS } from '@/modules/scheduling/constants/classScheduleStatus';
+import { readApiErrorMessage } from '@/utils/apiError';
 
-import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import InlineSelect from '@/components/common/InlineSelect.vue';
@@ -28,7 +33,7 @@ import Calendar from '@/assets/icons/Calendar.vue';
 import { useMasterTimetable } from '@/modules/scheduling/composables/useMasterTimetable';
 import { useScheduleExport } from '@/modules/scheduling/composables/useScheduleExport';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
-import { DEFAULT_PAGE_LIMIT, DROPDOWN_PARAM_KEY, FIRST_PAGE, STATUS_LIGHT } from '@/config/appConfig';
+import { DEFAULT_PAGE_LIMIT, DROPDOWN_PARAM_KEY, FIRST_PAGE } from '@/config/appConfig';
 import { CALENDAR_PAGE_LIMIT, SCHEDULE_VIEW } from '@/modules/scheduling/constants/scheduleView';
 import type { ScheduleViewMode } from '@/modules/scheduling/constants/scheduleView';
 import type { ClassSchedule } from '@/modules/scheduling/types/classSchedule';
@@ -67,7 +72,8 @@ const {
     semesterDropdown,
     currentSemester,
     statusFlow,
-    schedulingConstants
+    schedulingConstants,
+    hasActiveFilters
 } = useClassSchedule();
 
 /** College → Department → Program → Section, shared across the scheduling module. */
@@ -79,6 +85,52 @@ const instructorDropdown = useDropdownOptions<DropdownOption>('/instructors', {
     [DROPDOWN_PARAM_KEY]: true,
     can_teach: true
 });
+
+/**
+ * A session was dragged onto another day (C16).
+ *
+ * Written straight through the ordinary update endpoint, so every EXCLUDE
+ * constraint still applies — a drop onto an occupied slot comes back as a
+ * translated 422 and the list is refetched, which puts the block back where it
+ * was. That refetch IS the revert: no optimistic local mutation to unwind, and
+ * no way for the screen to disagree with the database.
+ */
+const moveToDay = async ({ event, day }: { event: ScheduleEvent; day: number }) => {
+    const schedule = schedules.value.data.find((row: ClassSchedule) => row.id === event.id);
+    if (!schedule) return;
+
+    // A published session is not moved by a gesture. People have been told
+    // when to turn up, and a drag is too easy to do by accident.
+    if (schedule.status_code === CLASS_SCHEDULE_STATUS.PUBLISHED) {
+        toast.error(
+            customizeLanguageData(
+                'cannotDragPublished',
+                'A published session cannot be dragged. Cancel it and schedule again.'
+            )
+        );
+
+        return;
+    }
+
+    try {
+        const result = await updateClassSchedule(schedule.id, {
+            course_offering_id: schedule.course_offering_id,
+            instructor_id: schedule.instructor_id ?? null,
+            room_id: schedule.room_id ?? null,
+            session_type_lookup_value_id: schedule.session_type_lookup_value_id ?? null,
+            day_of_week: day,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time
+        });
+
+        toast.success(result.message ?? customizeLanguageData('savedSuccessfully', 'Saved successfully'));
+    } catch (error: unknown) {
+        toast.error(readApiErrorMessage(error, customizeLanguageData('somethingWentWrong', 'Something went wrong')));
+    } finally {
+        // Whether it stuck or not, the grid is redrawn from the server.
+        await fetchSchedules();
+    }
+};
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('classSchedules', 'Class Timetable') }]);
 
@@ -138,7 +190,7 @@ const openPeek = (event: ScheduleEvent) => {
 /** The open block's status chip, or null when nothing is open. */
 const peekStatus = computed(() => (peekTarget.value ? statusChip(peekTarget.value) : null));
 
-/** The meeting in full — everything the table's columns would have shown. */
+/** The session in full — everything the table's columns would have shown. */
 const peekFields = computed<EventField[]>(() => {
     const schedule = peekTarget.value;
     if (!schedule) return [];
@@ -239,7 +291,7 @@ onMounted(async () => {
             <ScheduleFilterPanel
                 class="mb-4"
                 :hint="
-                    $lang.classFilterHint || 'Narrow the timetable to a college, department, programme or cohort.'
+                    $lang.classFilterHint || 'Narrow the timetable to a college, department, programme or section.'
                 " />
 
             <!-- ---- the calendar ---- -->
@@ -266,8 +318,10 @@ onMounted(async () => {
                     :events="calendarEvents"
                     :loading="isLoading"
                     :bounds="axisBounds"
-                    :empty-label="$lang.noMeetingsYet || 'No class schedules for this semester yet'"
-                    @select="openPeek" />
+                    :draggable="$can('updateClassSchedule')"
+                    :empty-label="$lang.noClassSessionsYet || 'No class schedules for this semester yet'"
+                    @select="openPeek"
+                    @move="moveToDay" />
 
                 <!-- Every cohort on one sheet, banded by department › programme. -->
                 <MasterTimetableGrid
@@ -277,7 +331,7 @@ onMounted(async () => {
                     :day-bands="master.dayBands.value"
                     :groups="master.groups.value"
                     :loading="isLoading"
-                    :empty-label="$lang.noMeetingsYet || 'No class schedules for this semester yet'"
+                    :empty-label="$lang.noClassSessionsYet || 'No class schedules for this semester yet'"
                     @select="openPeek" />
             </div>
 
@@ -299,6 +353,18 @@ onMounted(async () => {
                 @filter-change="handleFilterChange"
                 @update:currentPage="(page: number) => fetchSchedules({ page })"
                 @update:limit="(value: number) => fetchSchedules({ perPage: value })">
+                <template #empty>
+                    <EmptyState
+                        :title="$lang.noClassSessionsYet || 'No class schedules for this semester yet'"
+                        :hint="
+                            $lang.noClassSessionsYetHint ||
+                            'Generate the timetable from approved offerings, or add a session by hand.'
+                        "
+                        :action-label="$can('createClassSchedule') ? $lang.createClassSession || 'Add a session' : ''"
+                        :is-filtered="hasActiveFilters"
+                        @action="openCreateDialog" />
+                </template>
+
                 <template #cell-course_offering="{ item }">
                     <div class="min-w-0">
                         <span class="text-text-primary font-medium">
@@ -416,29 +482,16 @@ onMounted(async () => {
                 </template>
 
                 <template #cell-session_type_code="{ item }">
-                    <Badge
+                    <StatusBadge
                         v-if="(item as ClassSchedule).session_type"
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: (item as ClassSchedule).session_type?.color ?? undefined,
-                            borderColor: (item as ClassSchedule).session_type?.color ?? undefined
-                        }"
-                        :label="(item as ClassSchedule).session_type?.name ?? ''" />
+                        :value="(item as ClassSchedule).session_type" />
                     <span v-else>—</span>
                 </template>
 
                 <template #cell-status_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: statusChip(item as ClassSchedule)?.color ?? undefined,
-                            borderColor: statusChip(item as ClassSchedule)?.color ?? undefined
-                        }"
-                        :label="
-                            statusChip(item as ClassSchedule)?.name || (item as ClassSchedule).status?.name || '—'
-                        " />
+                    <StatusBadge
+                        :value="statusChip(item as ClassSchedule)"
+                        :fallback="(item as ClassSchedule).status?.name" />
                 </template>
 
                 <template #action="{ item }">
@@ -448,7 +501,7 @@ onMounted(async () => {
         </div>
 
         <!--
-            A block opens into the meeting in full, with the same actions the
+            A block opens into the session in full, with the same actions the
             table's row menu offers — one definition, two ways in.
         -->
         <ScheduleEventDialog

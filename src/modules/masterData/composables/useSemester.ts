@@ -30,6 +30,8 @@ const emptyForm = (): SemesterForm => ({
     name: '',
     start_date: '',
     end_date: '',
+    exam_start_date: '',
+    exam_end_date: '',
     is_current: false
 });
 
@@ -46,6 +48,8 @@ function semesterManager() {
         { key: 'term', label: customizeLanguageData('term', 'Term') },
         { key: 'start_date', label: customizeLanguageData('startDate', 'Start Date') },
         { key: 'end_date', label: customizeLanguageData('endDate', 'End Date') },
+        { key: 'exam_start_date', label: customizeLanguageData('examStartDate', 'Exams from') },
+        { key: 'exam_end_date', label: customizeLanguageData('examEndDate', 'Exams to') },
         { key: 'is_current', label: customizeLanguageData('current', 'Current') },
         { key: 'status_code', label: customizeLanguageData('status', 'Status') }
     ]);
@@ -80,6 +84,8 @@ function semesterManager() {
             name: semester.name,
             start_date: semester.start_date,
             end_date: semester.end_date,
+            exam_start_date: semester.exam_start_date,
+            exam_end_date: semester.exam_end_date,
             is_current: semester.is_current
         }),
         detailPath: (semester) => `/semesters/${semester.uuid}`,

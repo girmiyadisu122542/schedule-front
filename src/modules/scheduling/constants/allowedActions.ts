@@ -13,6 +13,7 @@ export type SchedulingAllowedAction =
     | 'createClassSchedule'
     | 'updateClassSchedule'
     | 'deleteClassSchedule'
+    | 'confirmClassSchedule'
     | 'publishClassSchedule'
     | 'cancelClassSchedule'
     | 'runClassScheduleGeneration'

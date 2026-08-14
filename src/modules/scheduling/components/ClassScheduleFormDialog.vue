@@ -57,7 +57,9 @@ onMounted(() => {
         :plain-background="true"
         :visible="visible"
         :header="
-            isEditing ? $lang.editMeeting || 'Edit Class Schedule' : $lang.createMeeting || 'Create Class Schedule'
+            isEditing
+                ? $lang.editClassSession || 'Edit Class Schedule'
+                : $lang.createClassSession || 'Create Class Schedule'
         "
         max-width="max-w-3xl"
         @update:visible="emit('update:visible', $event)">
@@ -68,8 +70,8 @@ onMounted(() => {
                 </h3>
                 <p class="text-text-tertiary text-xs">
                     {{
-                        $lang.meetingOfferingHint ||
-                        'The semester and cohort come from the offering — they are never entered here.'
+                        $lang.classSessionOfferingHint ||
+                        'The semester and section come from the offering — they are never entered here.'
                     }}
                 </p>
 
@@ -179,7 +181,7 @@ onMounted(() => {
 
                 <p class="text-text-tertiary text-xs">
                     {{
-                        $lang.meetingPublishHint ||
+                        $lang.classSessionPublishHint ||
                         'A schedule needs both a room and an instructor before it can be published.'
                     }}
                 </p>

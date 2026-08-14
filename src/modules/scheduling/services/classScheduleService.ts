@@ -73,7 +73,7 @@ export async function deleteClassSchedule(id: number): Promise<MutationResult<Cl
 }
 
 /**
- * Publish a draft meeting. No body — the backend stamps the actor and refuses
+ * Publish a draft session. No body — the backend stamps the actor and refuses
  * any edge `lookup_transitions` does not declare.
  */
 export async function publishClassSchedule(id: number): Promise<MutationResult<ClassSchedule>> {
@@ -83,11 +83,100 @@ export async function publishClassSchedule(id: number): Promise<MutationResult<C
 }
 
 /**
- * Cancel a published meeting. The backend sets `status -> cancelled` AND
+ * Cancel a published session. The backend sets `status -> cancelled` AND
  * `state -> 0` in one write, which frees the slot for someone else.
  */
 export async function cancelClassSchedule(id: number): Promise<MutationResult<ClassSchedule>> {
     const response = await axiosInstance.post(`${BASE}/${id}/cancel`);
 
     return response.data;
+}
+
+/**
+ * Pin a draft session so the next generation run schedules around it instead
+ * of replacing it. The row stays live either way, so its room, instructor and
+ * section slot remain protected by the database constraints.
+ */
+export async function pinClassSchedule(id: number, isPinned: boolean): Promise<MutationResult<ClassSchedule>> {
+    const response = await axiosInstance.post(`${BASE}/${id}/pin`, { is_pinned: isPinned });
+
+    return response.data;
+}
+
+/**
+ * Cancel one week of a recurring session — a public holiday, say.
+ *
+ * Not the same as cancelling the session: every other week is untouched, and
+ * the room stays booked for them.
+ */
+export async function cancelScheduleWeek(
+    id: number,
+    exceptionDate: string,
+    reason?: string | null
+): Promise<MutationResult<{ id: number; exception_date: string; reason: string | null }>> {
+    const response = await axiosInstance.post(`${BASE}/${id}/exceptions`, {
+        exception_date: exceptionDate,
+        reason: reason || null
+    });
+
+    return response.data;
+}
+
+/** Put a cancelled week back on. */
+export async function reinstateScheduleWeek(id: number, exceptionId: number): Promise<MutationResult<null>> {
+    const response = await axiosInstance.delete(`${BASE}/${id}/exceptions/${exceptionId}`);
+
+    return response.data;
+}
+
+/**
+ * The department confirmation step (C26).
+ *
+ * Which move this is depends on where the session already is, not on what is
+ * sent: from `draft` it asks the department, from `pending_confirmation` it is
+ * the department's answer.
+ */
+export async function confirmClassSchedule(id: number, remark?: string | null): Promise<MutationResult<ClassSchedule>> {
+    const response = await axiosInstance.post(`${BASE}/${id}/confirm`, { confirmation_remark: remark || null });
+
+    return response.data;
+}
+
+/** The department disagrees — back to draft, with the reason recorded. */
+export async function returnClassScheduleToDraft(
+    id: number,
+    remark?: string | null
+): Promise<MutationResult<ClassSchedule>> {
+    const response = await axiosInstance.post(`${BASE}/${id}/return-to-draft`, { confirmation_remark: remark || null });
+
+    return response.data;
+}
+
+/** One free slot the offering could be placed into (C24). */
+export interface PlacementSuggestion {
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+    room_id: number;
+    room_code: string;
+    room_name: string | null;
+    building: string | null;
+    capacity: number;
+    score: number;
+}
+
+/**
+ * Where an unplaced offering would fit, best first.
+ *
+ * The search takes no locks, so a suggestion can go stale between being shown
+ * and being taken. Acting on one goes through `createClassSchedule`, where the
+ * database constraints have the final word — a stale suggestion is refused
+ * there rather than quietly double-booking anything.
+ */
+export async function fetchPlacementSuggestions(courseOfferingId: number, limit = 5): Promise<PlacementSuggestion[]> {
+    const response = await axiosInstance.get(`${BASE}/suggestions`, {
+        params: { course_offering_id: courseOfferingId, limit }
+    });
+
+    return response.data.data ?? [];
 }

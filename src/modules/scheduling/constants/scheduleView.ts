@@ -2,7 +2,7 @@
  * How a scheduling screen is being read right now.
  *
  * The calendar is the default everywhere: a timetable is a shape in time, and a
- * grid shows the gaps and the clashes that a row per meeting cannot. The table
+ * grid shows the gaps and the clashes that a row per session cannot. The table
  * stays one click away for the work a grid is bad at — filtering a whole
  * semester, editing a cell, paging through hundreds of rows.
  */

@@ -9,10 +9,10 @@ import { MONDAY, SUNDAY } from '@/modules/scheduling/constants/classScheduleStat
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
- * Reactive Zod factory for the class-meeting form.
+ * Reactive Zod factory for the class-session form.
  *
  * `semester_id` / `section_id` are absent: the backend mirrors them off the
- * offering. So is the status — a meeting is created at `draft` and moves only
+ * offering. So is the status — a session is created at `draft` and moves only
  * through publish / cancel, both guarded server-side by `lookup_transitions`.
  *
  * Clash checking is NOT mirrored here. Three PostgreSQL EXCLUDE constraints own

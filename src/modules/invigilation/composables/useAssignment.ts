@@ -16,6 +16,7 @@ import {
     fetchAssignments,
     respondToAssignment,
     replaceInvigilator,
+    removeAssignment,
     autoAssignInvigilators,
     type AssignmentListParams
 } from '@/modules/invigilation/services/examInvigilatorAssignmentService';
@@ -145,6 +146,18 @@ function assignmentManager() {
         return collected;
     };
 
+    /**
+     * Whether the roster is being narrowed by anything the user chose.
+     *
+     * Not built on `useCrudResource` — a duty has no create dialog — so the
+     * flag is derived here rather than inherited.
+     */
+    const hasActiveFilters = computed(
+        () =>
+            !!searchQuery.value ||
+            Object.values(filters.value).some((value) => value !== null && value !== undefined && value !== '')
+    );
+
     /** Label and colour both come from the lookup value — never hardcoded. */
     const statusChip = (assignment: Assignment) => statuses.resolve(assignment.status_code);
 
@@ -272,6 +285,15 @@ function assignmentManager() {
         assignment.status_code === INVIGILATION_STATUS.ASSIGNED ||
         assignment.status_code === INVIGILATION_STATUS.ACCEPTED;
 
+    /**
+     * Take somebody off a hall.
+     *
+     * Run directly rather than behind a confirmation: it is reversible in one
+     * click, and the backend refuses it outright once the duty has been
+     * answered — so the destructive case cannot be reached from here at all.
+     */
+    const removeFromDuty = (assignment: Assignment) => runAction(() => removeAssignment(assignment.id));
+
     const getActionOptions = (assignment: Assignment): ActionOption[] => {
         const options: ActionOption[] = [];
 
@@ -304,6 +326,17 @@ function assignmentManager() {
             });
         }
 
+        // Unanswered only: once accepted or declined there is a record of what
+        // the person said, and Replace is the way to change it.
+        if (assignment.status_code === INVIGILATION_STATUS.ASSIGNED && allowedRoutesStore.can('assignInvigilator')) {
+            options.push({
+                label: customizeLanguageData('removeInvigilator', 'Take off duty'),
+                icon: XCircleIcon,
+                variant: STATUS_DANGER,
+                onClick: () => removeFromDuty(assignment)
+            });
+        }
+
         return options;
     };
 
@@ -324,6 +357,7 @@ function assignmentManager() {
         lastRun,
 
         statusChip,
+        hasActiveFilters,
         fetchAssignments: fetchItems,
         handleSearch,
         handleFilterChange,

@@ -31,6 +31,17 @@ const emptyForm = (): ScheduleSettingForm => ({
     exam_duration_minutes: '180',
     exam_gap_minutes: '120',
     exam_period_days: '14',
+    // Defaults that match the column defaults, so an unconfigured grid and a
+    // freshly created one behave identically.
+    max_exams_per_day: '2',
+    min_hours_between_exams: '0',
+    students_per_invigilator: '50',
+    min_invigilators_per_room: '1',
+    weight_spread_sessions: '10',
+    weight_avoid_gaps: '6',
+    weight_room_fit: '3',
+    weight_same_building: '4',
+    allow_cross_campus_day: false,
     is_active: true
 });
 
@@ -111,6 +122,15 @@ function scheduleSettingManager() {
             exam_duration_minutes: String(setting.exam_duration_minutes),
             exam_gap_minutes: String(setting.exam_gap_minutes),
             exam_period_days: String(setting.exam_period_days),
+            max_exams_per_day: String(setting.max_exams_per_day ?? 2),
+            min_hours_between_exams: String(setting.min_hours_between_exams ?? 0),
+            students_per_invigilator: String(setting.students_per_invigilator ?? 50),
+            min_invigilators_per_room: String(setting.min_invigilators_per_room ?? 1),
+            weight_spread_sessions: String(setting.weight_spread_sessions ?? 10),
+            weight_avoid_gaps: String(setting.weight_avoid_gaps ?? 6),
+            weight_room_fit: String(setting.weight_room_fit ?? 3),
+            weight_same_building: String(setting.weight_same_building ?? 4),
+            allow_cross_campus_day: !!setting.allow_cross_campus_day,
             is_active: setting.is_active
         });
         dialogVisible.value = true;

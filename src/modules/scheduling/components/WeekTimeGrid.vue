@@ -15,9 +15,9 @@ import Skeleton from '@/components/common/Skeleton.vue';
 
 /**
  * The standard weekly time grid: an hour axis down the left, one column per
- * weekday, and every meeting drawn as a block whose height IS its duration.
+ * weekday, and every session drawn as a block whose height IS its duration.
  *
- * It knows nothing about class meetings — the host maps its rows onto
+ * It knows nothing about class sessions — the host maps its rows onto
  * `ScheduleEvent` and gets the original back on `select`. Overlapping blocks are
  * laid out side by side rather than stacked, so nothing is ever hidden.
  */
@@ -35,17 +35,78 @@ const props = withDefaults(
         emptyLabel?: string;
         /** Tint today's column and draw the current-time line. */
         highlightToday?: boolean;
+        /**
+         * Whether a block can be dragged to another day (C16).
+         *
+         * Direct manipulation is the defining interaction of a timetable, and
+         * it is safe to attempt here: the database constraints refuse an
+         * illegal drop, so the worst outcome is a revert and a message.
+         */
+        draggable?: boolean;
     }>(),
     {
         loading: false,
         bounds: () => ({ start: DEFAULT_AXIS_START, end: DEFAULT_AXIS_END }),
         selectable: false,
         emptyLabel: '',
-        highlightToday: true
+        highlightToday: true,
+        draggable: false
     }
 );
 
-const emit = defineEmits<{ (e: 'select', event: ScheduleEvent): void }>();
+const emit = defineEmits<{
+    (e: 'select', event: ScheduleEvent): void;
+    /**
+     * A block was dropped on another day. The host performs the write and
+     * decides what to do when the server refuses — this component only reports
+     * the gesture.
+     */
+    (e: 'move', payload: { event: ScheduleEvent; day: number }): void;
+}>();
+
+/**
+ * Which block is being dragged, and which column is under the pointer.
+ *
+ * Day-only: dragging to another TIME would need the drop position resolved
+ * against the axis, and a session moved half a period by an imprecise gesture
+ * is worse than one that did not move. Changing the time stays in the dialog,
+ * where it is typed and deliberate.
+ */
+const draggingId = ref<string | number | null>(null);
+const hoverDay = ref<number | null>(null);
+
+const onDragStart = (event: ScheduleEvent, nativeEvent: DragEvent) => {
+    if (!props.draggable) return;
+
+    draggingId.value = event.id;
+    // `move` rather than `copy`: the cursor should say what will happen.
+    if (nativeEvent.dataTransfer) nativeEvent.dataTransfer.effectAllowed = 'move';
+};
+
+const onDragEnd = () => {
+    draggingId.value = null;
+    hoverDay.value = null;
+};
+
+const onDragOver = (dayValue: number, nativeEvent: DragEvent) => {
+    if (!props.draggable || draggingId.value === null) return;
+
+    // Without preventDefault the browser refuses the drop entirely.
+    nativeEvent.preventDefault();
+    hoverDay.value = dayValue;
+};
+
+const onDrop = (dayValue: number) => {
+    if (!props.draggable || draggingId.value === null) return;
+
+    const dragged = props.events.find((candidate) => candidate.id === draggingId.value);
+    onDragEnd();
+
+    // Dropping a block back on its own column is not a move.
+    if (!dragged || dragged.day === dayValue) return;
+
+    emit('move', { event: dragged, day: dayValue });
+};
 
 /** One hour of the axis, in pixels. Everything else is a percentage of the span. */
 const HOUR_HEIGHT = 68;
@@ -156,8 +217,14 @@ const onSelect = (event: ScheduleEvent) => {
                         v-for="column in columns"
                         :key="column.id"
                         class="week-grid-column border-border-subtle relative border-r last:border-r-0"
-                        :class="isToday(column.id) ? 'week-grid-column--today' : ''"
-                        :style="{ height: bodyHeight, '--hour-height': `${HOUR_HEIGHT}px` }">
+                        :class="[
+                            isToday(column.id) ? 'week-grid-column--today' : '',
+                            hoverDay === column.id ? 'week-grid-column--drop' : ''
+                        ]"
+                        :style="{ height: bodyHeight, '--hour-height': `${HOUR_HEIGHT}px` }"
+                        @dragover="onDragOver(column.id, $event)"
+                        @dragleave="hoverDay = null"
+                        @drop="onDrop(column.id)">
                         <!-- the current-time line, on today's column only -->
                         <div
                             v-if="isToday(column.id) && nowOffset !== null"
@@ -175,7 +242,12 @@ const onSelect = (event: ScheduleEvent) => {
                             :class="[
                                 placed.event.isMuted ? 'week-grid-event--muted' : '',
                                 placed.event.isTentative ? 'week-grid-event--tentative' : '',
-                                selectable ? 'cursor-pointer' : 'cursor-default'
+                                draggingId === placed.event.id ? 'week-grid-event--dragging' : '',
+                                draggable
+                                    ? 'cursor-grab active:cursor-grabbing'
+                                    : selectable
+                                      ? 'cursor-pointer'
+                                      : 'cursor-default'
                             ]"
                             :style="{
                                 top: `${placed.top}%`,
@@ -185,6 +257,9 @@ const onSelect = (event: ScheduleEvent) => {
                                 '--event-color': placed.event.color || 'var(--color-schedule-brand-blue)'
                             }"
                             :title="`${placed.event.tooltip || placed.event.title} · ${placed.event.start}–${placed.event.end}`"
+                            :draggable="draggable"
+                            @dragstart="onDragStart(placed.event, $event)"
+                            @dragend="onDragEnd"
                             @click="onSelect(placed.event)">
                             <span class="week-grid-event__time">{{ placed.event.start }}–{{ placed.event.end }}</span>
                             <span class="week-grid-event__title">{{ placed.event.title }}</span>
@@ -309,5 +384,17 @@ const onSelect = (event: ScheduleEvent) => {
 
 .week-grid-event--muted .week-grid-event__title {
     text-decoration: line-through;
+}
+
+/* The column a block would land in. Tinted rather than outlined so it reads at
+   a glance without shifting anything by a pixel. */
+.week-grid-column--drop {
+    background: color-mix(in oklab, var(--color-schedule-brand-blue) 10%, transparent);
+}
+
+/* The block being carried. Kept visible rather than hidden, so the user can
+   still see what they picked up. */
+.week-grid-event--dragging {
+    opacity: 0.45;
 }
 </style>

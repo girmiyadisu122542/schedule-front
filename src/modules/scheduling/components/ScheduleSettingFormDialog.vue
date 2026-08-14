@@ -266,7 +266,7 @@ const previewPeriods = computed(() => {
                 <InputText
                     v-model="editForm.exam_gap_minutes"
                     type="number"
-                    :label="$lang.examGapMinutes || 'Turnaround between sittings (minutes)'"
+                    :label="$lang.examGapMinutes || 'Gap between exams (minutes)'"
                     :invalid="!!editErrors.exam_gap_minutes"
                     :message="editErrors.exam_gap_minutes" />
 
@@ -279,6 +279,134 @@ const previewPeriods = computed(() => {
                     :invalid="!!editErrors.exam_period_days"
                     :message="editErrors.exam_period_days" />
             </div>
+
+            <!--
+                ---- What a cohort may be put through ----
+
+                Overlapping exams are already impossible — the database refuses
+                them. These are the legal-but-brutal cases: three papers in one
+                day, or a second paper starting as the first one ends.
+            -->
+            <section class="border-border-subtle rounded-xl border p-4">
+                <h3 class="text-text-primary mb-1 text-sm font-semibold">
+                    {{ $lang.cohortExamLoad || 'What a section may sit in a day' }}
+                </h3>
+                <p class="text-text-tertiary mb-3 text-xs">
+                    {{
+                        $lang.cohortExamLoadHint ||
+                        'The database already prevents two exams at the same time. These stop the ones that are legal but unreasonable.'
+                    }}
+                </p>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <InputText
+                        v-model="editForm.max_exams_per_day"
+                        type="number"
+                        :label="$lang.maxExamsPerDay || 'Most exams in one day'"
+                        :invalid="!!editErrors.max_exams_per_day"
+                        :message="editErrors.max_exams_per_day" />
+
+                    <InputText
+                        v-model="editForm.min_hours_between_exams"
+                        type="number"
+                        :label="$lang.minHoursBetweenExams || 'Least rest between exams (hours)'"
+                        :helper-message="$lang.minHoursBetweenExamsHint || 'Zero means back-to-back is allowed.'"
+                        :invalid="!!editErrors.min_hours_between_exams"
+                        :message="editErrors.min_hours_between_exams" />
+                </div>
+            </section>
+
+            <!-- ---- Invigilator staffing ---- -->
+            <section class="border-border-subtle rounded-xl border p-4">
+                <h3 class="text-text-primary mb-1 text-sm font-semibold">
+                    {{ $lang.invigilatorStaffing || 'Invigilator staffing' }}
+                </h3>
+                <p class="text-text-tertiary mb-3 text-xs">
+                    {{
+                        $lang.invigilatorStaffingHint ||
+                        'How many invigilators a hall needs is worked out from how many sit in it, so the numbers asked of departments can be justified.'
+                    }}
+                </p>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <InputText
+                        v-model="editForm.students_per_invigilator"
+                        type="number"
+                        :label="$lang.studentsPerInvigilator || 'Students per invigilator'"
+                        :invalid="!!editErrors.students_per_invigilator"
+                        :message="editErrors.students_per_invigilator" />
+
+                    <InputText
+                        v-model="editForm.min_invigilators_per_room"
+                        type="number"
+                        :label="$lang.minInvigilatorsPerRoom || 'Fewest per hall'"
+                        :helper-message="$lang.minInvigilatorsHint || 'However small the hall.'"
+                        :invalid="!!editErrors.min_invigilators_per_room"
+                        :message="editErrors.min_invigilators_per_room" />
+                </div>
+            </section>
+
+            <!--
+                ---- Placement preferences ----
+
+                These do not decide what is legal — the database does that.
+                They decide which of the legal options gets chosen, which is
+                the difference between a timetable that works and one a cohort
+                can live with. Zero switches a preference off entirely.
+            -->
+            <section class="border-border-subtle rounded-xl border p-4">
+                <h3 class="text-text-primary mb-1 text-sm font-semibold">
+                    {{ $lang.placementPreferences || 'Placement preferences' }}
+                </h3>
+                <p class="text-text-tertiary mb-3 text-xs">
+                    {{
+                        $lang.placementPreferencesHint ||
+                        'Which of the available slots the generator prefers. Higher counts for more; zero turns a preference off.'
+                    }}
+                </p>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <InputText
+                        v-model="editForm.weight_spread_sessions"
+                        type="number"
+                        :label="$lang.weightSpreadSessions || 'Spread a course across the week'"
+                        :invalid="!!editErrors.weight_spread_sessions"
+                        :message="editErrors.weight_spread_sessions" />
+
+                    <InputText
+                        v-model="editForm.weight_avoid_gaps"
+                        type="number"
+                        :label="$lang.weightAvoidGaps || 'Avoid idle gaps in a section’s day'"
+                        :invalid="!!editErrors.weight_avoid_gaps"
+                        :message="editErrors.weight_avoid_gaps" />
+
+                    <InputText
+                        v-model="editForm.weight_room_fit"
+                        type="number"
+                        :label="$lang.weightRoomFit || 'Prefer a room that fits'"
+                        :invalid="!!editErrors.weight_room_fit"
+                        :message="editErrors.weight_room_fit" />
+
+                    <InputText
+                        v-model="editForm.weight_same_building"
+                        type="number"
+                        :label="$lang.weightSameBuilding || 'Keep a section in one building'"
+                        :invalid="!!editErrors.weight_same_building"
+                        :message="editErrors.weight_same_building" />
+                </div>
+
+                <div class="mt-4">
+                    <ToggleSwitch
+                        v-model="editForm.allow_cross_campus_day"
+                        :label="$lang.allowCrossCampusDay || 'Allow a section to move between campuses in a day'" />
+                    <p class="text-text-tertiary mt-1 text-xs">
+                        {{
+                            $lang.allowCrossCampusHint ||
+                            'Off by default — a section with a class on one campus cannot reach another twenty minutes later.'
+                        }}
+                    </p>
+                </div>
+            </section>
 
             <ToggleSwitch
                 v-model="editForm.is_active"
@@ -309,7 +437,7 @@ const previewPeriods = computed(() => {
 
                 <!-- A course with its own exam length gets its own windows. -->
                 <p class="text-text-secondary mt-3 mb-2 text-xs font-semibold">
-                    {{ $lang.examWindowsPreview || 'Exam sittings at the default length' }}
+                    {{ $lang.examWindowsPreview || 'Exam sessions at the default length' }}
                 </p>
 
                 <div class="flex flex-wrap gap-1.5">
@@ -322,7 +450,7 @@ const previewPeriods = computed(() => {
                     <span
                         v-if="!previewExamWindows.length"
                         class="text-text-tertiary text-xs">
-                        {{ $lang.noExamWindows || 'No sittings fit — widen the exam day or shorten the exam.' }}
+                        {{ $lang.noExamWindows || 'No exam sessions fit — widen the exam day or shorten the exam.' }}
                     </span>
                 </div>
             </section>

@@ -15,7 +15,19 @@ export interface DutyExamRef extends ScheduleRef {
     room_code?: string | null;
     room_name?: string | null;
 }
-import type { InstructorRef } from '@/modules/invigilation/types/availability';
+
+/**
+ * The compact instructor shape embedded in a duty row.
+ *
+ * `employee_no` IS the invigilator code — the institution's existing staff
+ * number. No second identity was introduced for invigilation.
+ */
+export interface InstructorRef {
+    id: number;
+    uuid: string;
+    employee_no: string;
+    name: string;
+}
 
 /**
  * One instructor on duty at one exam (backend

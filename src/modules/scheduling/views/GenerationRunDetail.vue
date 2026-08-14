@@ -1,28 +1,77 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { toast } from 'vue-sonner';
 
 import { useLanguageStore } from '@/stores/languageStore';
 import { useDetailResource } from '@/composables/useDetailResource';
-import { getGenerationRun } from '@/modules/scheduling/services/generationRunService';
+import { getGenerationRun, restoreGenerationRun } from '@/modules/scheduling/services/generationRunService';
 import { fetchClassSchedules } from '@/modules/scheduling/services/classScheduleService';
 import { fetchExamSchedules } from '@/modules/scheduling/services/examScheduleService';
 import { useSchedulingConstants } from '@/modules/scheduling/composables/useSchedulingConstants';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
+import MainButton from '@/components/common/MainButton.vue';
 import DetailPage from '@/components/common/DetailPage.vue';
 import DetailField from '@/components/common/DetailField.vue';
 import DetailPanel from '@/components/common/DetailPanel.vue';
 
 import ClockTimeTimerArrow from '@/assets/icons/ClockTimeTimerArrow.vue';
-import { STATUS_LIGHT, STATUS_WARNING, STATUS_SUCCESS } from '@/config/appConfig';
+import { STATUS_WARNING, STATUS_SUCCESS } from '@/config/appConfig';
 import type { ClassSchedule } from '@/modules/scheduling/types/classSchedule';
 import type { ExamSchedule } from '@/modules/scheduling/types/examSchedule';
+import { readApiErrorMessage } from '@/utils/apiError';
 
 const route = useRoute();
 const { customizeLanguageData } = useLanguageStore();
 const { item: run, isLoading, notFound, load } = useDetailResource(getGenerationRun);
 const schedulingConstants = useSchedulingConstants();
+
+/**
+ * What a placed row shows: how many sessions were laid down for a class run,
+ * or the date for an exam run.
+ *
+ * `meetings` is the summary jsonb's old name for `sessions`. Runs recorded
+ * before the rename still carry it, so both are read — dropping the old name
+ * would blank this column out for every historical run.
+ */
+const placedDetail = (item: { sessions?: number; meetings?: number; exam_date?: string }) =>
+    item.sessions ?? item.meetings ?? item.exam_date ?? '';
+
+/**
+ * Put this run's timetable back (C41).
+ *
+ * Confirmed first because it replaces whatever is currently in draft. The
+ * result is reported honestly: rows whose slots have since been taken cannot
+ * be restored, and saying so beats a bare "done".
+ */
+const isRestoring = ref(false);
+
+const confirmRestore = async () => {
+    isRestoring.value = true;
+    try {
+        const result = await restoreGenerationRun(run.value!.id);
+        const detail = result.data;
+
+        if (detail && detail.rejected > 0) {
+            // A partial restore is not a failure, but the user has to know the
+            // timetable did not come back whole.
+            toast.warning(
+                result.message ??
+                    `${detail.restored} restored, ${detail.rejected} could not be put back — their slots are taken.`
+            );
+        } else {
+            toast.success(result.message ?? customizeLanguageData('savedSuccessfully', 'Saved successfully'));
+        }
+
+        await load(String(route.params.uuid));
+    } catch (error: unknown) {
+        toast.error(readApiErrorMessage(error, customizeLanguageData('somethingWentWrong', 'Something went wrong')));
+    } finally {
+        isRestoring.value = false;
+    }
+};
 
 const breadcrumbItems = computed(() => [
     { label: customizeLanguageData('generationRuns', 'Generation Runs') },
@@ -36,7 +85,7 @@ const placed = computed(() => run.value?.summary?.placed ?? []);
 const unplaced = computed(() => run.value?.summary?.unplaced ?? []);
 const skipped = computed(() => run.value?.summary?.skipped ?? []);
 
-const meetingColumns = computed(() => [
+const sessionColumns = computed(() => [
     {
         key: 'day_of_week',
         label: customizeLanguageData('dayOfWeek', 'Day'),
@@ -78,12 +127,22 @@ onMounted(() => {
         :not-found="notFound"
         :not-found-title="$lang.generationRunNotFound || 'Generation run not found'">
         <template #header-actions>
-            <Badge
+            <StatusBadge
                 v-if="run?.status"
+                :value="run.status" />
+
+            <!--
+                Hidden rather than disabled when there is nothing to restore:
+                runs from before snapshots existed, and failed runs, have no
+                copy to put back, and a permanently greyed-out button reads as
+                a fault rather than as "not applicable here".
+            -->
+            <MainButton
+                v-if="run?.has_snapshot && $can(isExamRun ? 'runExamScheduleGeneration' : 'runClassScheduleGeneration')"
                 outlined
-                :variant="STATUS_LIGHT"
-                :style="{ color: run.status.color ?? undefined, borderColor: run.status.color ?? undefined }"
-                :label="run.status.name" />
+                :label="$lang.restoreRun || 'Restore this timetable'"
+                :loading="isRestoring"
+                @click="confirmRestore" />
         </template>
 
         <template #fields>
@@ -94,14 +153,14 @@ onMounted(() => {
                 :label="$lang.generationType || 'Type'"
                 :value="run?.type?.name" />
             <!--
-                Field labels, not the panel's sentence fragment: `meetingsPlaced`
-                reads "6 meetings placed" and is wrong as a label.
+                Field labels, not the panel's sentence fragment: `classSessionsPlaced`
+                reads "6 sessions placed" and is wrong as a label.
             -->
             <DetailField
                 :label="
                     isExamRun
                         ? $lang.placedSittingsLabel || 'Schedules placed'
-                        : $lang.placedMeetingsLabel || 'Schedules placed'
+                        : $lang.placedClassSessionsLabel || 'Schedules placed'
                 "
                 :value="run?.scheduled_count"
                 numeric />
@@ -181,7 +240,7 @@ onMounted(() => {
                     v-for="item in placed"
                     :key="item.course_offering_id"
                     :variant="STATUS_SUCCESS"
-                    :label="`${item.label} · ${item.meetings ?? item.exam_date ?? ''}`" />
+                    :label="`${item.label} · ${placedDetail(item)}`" />
             </div>
         </section>
 
@@ -198,8 +257,8 @@ onMounted(() => {
                 v-else
                 :title="$lang.classSchedules || 'Class Timetable'"
                 :fetcher="() => fetchClassSchedules({ generation_run_id: run!.id, limit: 100 })"
-                :columns="meetingColumns"
-                :empty-text="$lang.noMeetingsHere || 'This run produced no class schedules.'" />
+                :columns="sessionColumns"
+                :empty-text="$lang.noClassSessionsHere || 'This run produced no class schedules.'" />
         </template>
     </DetailPage>
 </template>

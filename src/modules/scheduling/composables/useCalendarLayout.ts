@@ -55,7 +55,7 @@ export function isoWeekday(date: Date): number {
  *
  * Overlapping events are gathered into clusters, and every event in a cluster
  * gets its own lane — the same thing Outlook and Google Calendar do. Two
- * meetings the database would never allow at once can still land here (a room
+ * sessions the database would never allow at once can still land here (a room
  * clash IS refused, but a room-less draft and a placed one are not), and the
  * grid has to show both or it lies about what is scheduled.
  *
@@ -246,7 +246,7 @@ export function buildMonthCells(anchorIso: string, events: ScheduleEvent[]): Mon
  * The columns a week grid should show: every teaching day, plus any day
  * something actually landed on.
  *
- * A Saturday meeting the registrar placed by hand has to have a column to be
+ * A Saturday session the registrar placed by hand has to have a column to be
  * drawn in — but an institution that never teaches at the weekend should not be
  * looking at two empty ones.
  *

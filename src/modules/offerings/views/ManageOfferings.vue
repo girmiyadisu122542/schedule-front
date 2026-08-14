@@ -5,16 +5,17 @@ import { useLanguageStore } from '@/stores/languageStore';
 import { useOffering } from '@/modules/offerings/composables/useOffering';
 import { OFFERING_LOOKUP_TYPE } from '@/modules/offerings/constants/offeringStatus';
 
-import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import ChangeStatusModal from '@/components/common/ChangeStatusModal.vue';
 import OfferingFormDialog from '@/modules/offerings/components/OfferingFormDialog.vue';
 
 import FileText from '@/assets/icons/FileText.vue';
-import { STATUS_LIGHT } from '@/config/appConfig';
+
 import type { Offering } from '@/modules/offerings/types/offering';
 
 const { customizeLanguageData } = useLanguageStore();
@@ -41,7 +42,8 @@ const {
     statusModalVisible,
     statusModalAnchor,
     statusTarget,
-    applyStatusChange
+    applyStatusChange,
+    hasActiveFilters
 } = useOffering();
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('courseOfferings', 'Course Offerings') }]);
@@ -94,6 +96,18 @@ onMounted(() => {
                 @filter-change="handleFilterChange"
                 @update:currentPage="(page: number) => fetchOfferings({ page })"
                 @update:limit="(value: number) => fetchOfferings({ perPage: value })">
+                <template #empty>
+                    <EmptyState
+                        :title="$lang.noOfferingsYet || 'No course offerings for this semester yet'"
+                        :hint="
+                            $lang.noOfferingsYetHint ||
+                            'An offering says which course runs this term, and to which section. Nothing can be scheduled until one exists.'
+                        "
+                        :action-label="$can('createCourseOffering') ? $lang.createOffering || 'Create offering' : ''"
+                        :is-filtered="hasActiveFilters"
+                        @action="openCreateDialog" />
+                </template>
+
                 <template #cell-course="{ item }">
                     <div class="flex flex-col">
                         <span class="text-text-primary font-medium">{{ (item as Offering).course?.code }}</span>
@@ -123,14 +137,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-status_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: statusChip(item as Offering)?.color ?? undefined,
-                            borderColor: statusChip(item as Offering)?.color ?? undefined
-                        }"
-                        :label="statusChip(item as Offering)?.name || (item as Offering).status?.name || '—'" />
+                    <StatusBadge
+                        :value="statusChip(item as Offering)"
+                        :fallback="(item as Offering).status?.name" />
                 </template>
 
                 <template #action="{ item }">

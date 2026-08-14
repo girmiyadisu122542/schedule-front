@@ -115,6 +115,35 @@ onMounted(() => {
                         message-type="error"
                         is-required />
                 </div>
+
+                <!--
+                    The exam period. Required, and inside the term: the exam
+                    generator reads these dates directly rather than inferring
+                    a window from the end of the semester, so a term without
+                    them cannot be examined.
+                -->
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <DateTimePicker
+                        v-model="form.exam_start_date"
+                        :label-text="$lang.examStartDate || 'Exams from'"
+                        :invalid="!!errors.exam_start_date"
+                        :message="errors.exam_start_date"
+                        message-type="error"
+                        is-required />
+                    <DateTimePicker
+                        v-model="form.exam_end_date"
+                        :label-text="$lang.examEndDate || 'Exams to'"
+                        :invalid="!!errors.exam_end_date"
+                        :message="errors.exam_end_date"
+                        message-type="error"
+                        is-required />
+                </div>
+                <p class="text-text-tertiary text-xs">
+                    {{
+                        $lang.examWindowHint ||
+                        'When exams sit for this semester. The exam generator places papers only on these dates.'
+                    }}
+                </p>
             </section>
 
             <section class="border-border-subtle space-y-4 border-t pt-6">

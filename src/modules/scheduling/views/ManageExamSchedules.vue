@@ -4,10 +4,12 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useLanguageStore } from '@/stores/languageStore';
 import { useExamSchedule } from '@/modules/scheduling/composables/useExamSchedule';
 import { useScheduleFilters } from '@/modules/scheduling/composables/useScheduleFilters';
+import type { LookupValueRef } from '@/composables/useLookupValues';
 
-import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import MainDialog from '@/components/common/MainDialog.vue';
 import MainButton from '@/components/common/MainButton.vue';
 import TextArea from '@/components/common/TextArea.vue';
@@ -20,6 +22,7 @@ import MasterTimetableGrid from '@/modules/scheduling/components/MasterTimetable
 import ScheduleExportMenu from '@/modules/scheduling/components/ScheduleExportMenu.vue';
 import ScheduleViewToggle from '@/modules/scheduling/components/ScheduleViewToggle.vue';
 import ScheduleFilterPanel from '@/modules/scheduling/components/ScheduleFilterPanel.vue';
+import ExamInvigilatorsDialog from '@/modules/scheduling/components/ExamInvigilatorsDialog.vue';
 import ScheduleCalendarToolbar from '@/modules/scheduling/components/ScheduleCalendarToolbar.vue';
 import ScheduleEventDialog from '@/modules/scheduling/components/ScheduleEventDialog.vue';
 import type { EventField } from '@/modules/scheduling/components/ScheduleEventDialog.vue';
@@ -27,7 +30,7 @@ import type { EventField } from '@/modules/scheduling/components/ScheduleEventDi
 import CalendarCheckIcon from '@/assets/icons/CalendarCheckIcon.vue';
 import { useDatedMasterTimetable } from '@/modules/scheduling/composables/useMasterTimetable';
 import { useScheduleExport } from '@/modules/scheduling/composables/useScheduleExport';
-import { DEFAULT_PAGE_LIMIT, FIRST_PAGE, STATUS_LIGHT } from '@/config/appConfig';
+import { DEFAULT_PAGE_LIMIT, FIRST_PAGE } from '@/config/appConfig';
 import { CALENDAR_PAGE_LIMIT, SCHEDULE_VIEW } from '@/modules/scheduling/constants/scheduleView';
 import type { ScheduleViewMode } from '@/modules/scheduling/constants/scheduleView';
 import type { ExamSchedule } from '@/modules/scheduling/types/examSchedule';
@@ -61,15 +64,24 @@ const {
     currentSemester,
     schedulingConstants,
     statusFlow,
+    examTypes,
+    invigilatorsDialogVisible,
+    invigilatorsTarget,
     isSavingAction,
     confirmDialogVisible,
     confirmTarget,
     confirmRemark,
-    submitConfirmation
+    submitConfirmation,
+    hasActiveFilters
 } = useExamSchedule();
 
 /** College → Department → Program → Section, shared across the scheduling module. */
 const scheduleFilters = useScheduleFilters();
+
+/** Midterm / final / makeup / quiz, shared with the table's own filter. */
+const examTypeOptions = computed(() =>
+    examTypes.options.value.map((type: LookupValueRef) => ({ label: type.name, value: type.code }))
+);
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('examSchedules', 'Exam Timetable') }]);
 
@@ -164,9 +176,10 @@ onMounted(async () => {
     // the size before the first fetch rather than paying for a second one.
     limit.value = CALENDAR_PAGE_LIMIT;
 
-    // useStatusFlow lives inside a shared composable, so its auto-fetch never
-    // fires — pull the status catalogue and transition edges explicitly.
+    // useStatusFlow and useLookupValues live inside a shared composable, so
+    // their auto-fetch never fires — pull both catalogues explicitly.
     statusFlow.refetch();
+    examTypes.refetch();
     schedulingConstants.load();
     semesterDropdown.fetchOptions();
     scheduleFilters.load();
@@ -223,9 +236,8 @@ onMounted(async () => {
             <!-- Scopes both views: the calendar and the table read one fetch. -->
             <ScheduleFilterPanel
                 class="mb-4"
-                :hint="
-                    $lang.examFilterHint || 'Narrow the exam period to a college, department, programme or cohort.'
-                " />
+                :hint="$lang.examFilterHint || 'Narrow the exam period to a college, department, programme or section.'"
+                :exam-types="examTypeOptions" />
 
             <!-- ---- the calendar ---- -->
             <div
@@ -283,6 +295,18 @@ onMounted(async () => {
                 @filter-change="handleFilterChange"
                 @update:currentPage="(page: number) => fetchExams({ page })"
                 @update:limit="(value: number) => fetchExams({ perPage: value })">
+                <template #empty>
+                    <EmptyState
+                        :title="$lang.noExamsYet || 'No exams scheduled for this semester yet'"
+                        :hint="
+                            $lang.noExamsYetHint ||
+                            'Generate the exam timetable, or place a sitting by hand. Exams are placed only inside the semester\u2019s exam period.'
+                        "
+                        :action-label="$can('createExamSchedule') ? $lang.createSitting || 'Add an exam' : ''"
+                        :is-filtered="hasActiveFilters"
+                        @action="openCreateDialog" />
+                </template>
+
                 <template #cell-course_offering="{ item }">
                     <div class="min-w-0">
                         <span class="text-text-primary font-medium">
@@ -297,16 +321,9 @@ onMounted(async () => {
                 </template>
 
                 <template #cell-exam_type_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: (item as ExamSchedule).exam_type?.color ?? undefined,
-                            borderColor: (item as ExamSchedule).exam_type?.color ?? undefined
-                        }"
-                        :label="
-                            (item as ExamSchedule).exam_type?.name || (item as ExamSchedule).exam_type_code || '—'
-                        " />
+                    <StatusBadge
+                        :value="(item as ExamSchedule).exam_type"
+                        :fallback="(item as ExamSchedule).exam_type_code" />
                 </template>
 
                 <template #cell-exam_date="{ item }">
@@ -329,14 +346,9 @@ onMounted(async () => {
                 </template>
 
                 <template #cell-status_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: statusChip(item as ExamSchedule)?.color ?? undefined,
-                            borderColor: statusChip(item as ExamSchedule)?.color ?? undefined
-                        }"
-                        :label="statusChip(item as ExamSchedule)?.name || (item as ExamSchedule).status?.name || '—'" />
+                    <StatusBadge
+                        :value="statusChip(item as ExamSchedule)"
+                        :fallback="(item as ExamSchedule).status?.name" />
                 </template>
 
                 <template #action="{ item }">
@@ -411,5 +423,14 @@ onMounted(async () => {
             :type="confirmState.type"
             :loading="confirmState.loading"
             @confirm="confirmState.onConfirm" />
+
+        <!--
+            Staffing one hall. Refetching on change keeps the row's own
+            invigilator count true without reloading the whole screen.
+        -->
+        <ExamInvigilatorsDialog
+            v-model:visible="invigilatorsDialogVisible"
+            :sitting="invigilatorsTarget"
+            @changed="fetchExams()" />
     </div>
 </template>

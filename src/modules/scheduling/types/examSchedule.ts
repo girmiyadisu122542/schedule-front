@@ -6,7 +6,7 @@ import type { OfferingRef, ScheduleRef } from '@/modules/scheduling/types/classS
  * One exam sitting, as `GET /schedule/exam-schedules` emits it (backend
  * `App\Models\Schedule\ExamSchedule::indexFields`).
  *
- * As on a class meeting, `state` is the conflict-liveness flag the two
+ * As on a class session, `state` is the conflict-liveness flag the two
  * PostgreSQL EXCLUDE constraints read — not an `is_active` toggle. Cancelling
  * sets `status_code = 'cancelled'` AND `state = 0` in one write, which frees
  * the hall and the cohort's window.
@@ -24,6 +24,18 @@ export interface ExamSchedule {
     generation_run_id: number | null;
     required_invigilators: number;
     state: number;
+    /** A hand placement the next generation run must not take away. */
+    is_pinned: boolean;
+    /**
+     * A paper split across halls: one row per hall, all at the same hour.
+     * `part_count` is 1 for the ordinary case.
+     */
+    seat_allocation?: number | null;
+    part_number: number;
+    part_count: number;
+    accommodation_note?: string | null;
+    accommodation_extra_minutes?: number | null;
+    accommodation_room_id?: number | null;
     exam_date: string;
     start_time: string;
     end_time: string;
@@ -66,6 +78,9 @@ export interface ExamScheduleForm {
     start_time: string;
     end_time: string;
     required_invigilators: string;
+    accommodation_note: string;
+    accommodation_extra_minutes: string;
+    accommodation_room_id: number | null;
 }
 
 export interface PaginatedExamSchedules {

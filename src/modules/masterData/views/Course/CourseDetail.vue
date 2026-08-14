@@ -7,14 +7,14 @@ import { useDetailResource } from '@/composables/useDetailResource';
 import { getCourse } from '@/modules/masterData/services/courseService';
 import { fetchOfferings } from '@/modules/offerings/services/offeringService';
 
-import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import BoolChip from '@/components/common/BoolChip.vue';
 import DetailPage from '@/components/common/DetailPage.vue';
 import DetailField from '@/components/common/DetailField.vue';
 import DetailPanel from '@/components/common/DetailPanel.vue';
 
 import BookIcon from '@/assets/icons/BookIcon.vue';
-import { STATUS_LIGHT } from '@/config/appConfig';
+
 import type { Offering } from '@/modules/offerings/types/offering';
 
 const route = useRoute();
@@ -34,7 +34,7 @@ const offeringColumns = computed(() => [
     },
     {
         key: 'section',
-        label: customizeLanguageData('section', 'Cohort'),
+        label: customizeLanguageData('section', 'Section'),
         format: (row: Offering) => row.section?.name ?? row.program?.name
     },
     {
@@ -62,15 +62,9 @@ onMounted(() => load(String(route.params.uuid)));
         :not-found="notFound"
         :not-found-title="$lang.courseNotFound || 'Course not found'">
         <template #header-actions>
-            <Badge
+            <StatusBadge
                 v-if="course?.course_type"
-                outlined
-                :variant="STATUS_LIGHT"
-                :style="{
-                    color: course.course_type.color ?? undefined,
-                    borderColor: course.course_type.color ?? undefined
-                }"
-                :label="course.course_type.name" />
+                :value="course.course_type" />
             <BoolChip :value="!!course?.is_active" />
         </template>
 
@@ -89,7 +83,7 @@ onMounted(() => load(String(route.params.uuid)));
                 :label="$lang.contactHours || 'Contact hours'"
                 :value="course?.contact_hours"
                 numeric />
-            <!-- The weekly load the class generator fans out into meetings. -->
+            <!-- The weekly load the class generator fans out into sessions. -->
             <DetailField
                 :label="$lang.lectureHours || 'Lecture h/week'"
                 :value="course?.lecture_hours_per_week"

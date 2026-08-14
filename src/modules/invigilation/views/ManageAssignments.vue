@@ -8,9 +8,11 @@ import { useAssignment } from '@/modules/invigilation/composables/useAssignment'
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import ScheduleExportMenu from '@/modules/scheduling/components/ScheduleExportMenu.vue';
 import MainTable from '@/components/common/MainTable.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import MainDialog from '@/components/common/MainDialog.vue';
 import MainSelect from '@/components/common/MainSelect.vue';
 import MainButton from '@/components/common/MainButton.vue';
@@ -18,7 +20,7 @@ import TextArea from '@/components/common/TextArea.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 
 import ShieldCheckAltIcon from '@/assets/icons/ShieldCheckAltIcon.vue';
-import { DROPDOWN_PARAM_KEY, STATUS_LIGHT, STATUS_WARNING } from '@/config/appConfig';
+import { DROPDOWN_PARAM_KEY, STATUS_WARNING } from '@/config/appConfig';
 import type { Assignment } from '@/modules/invigilation/types/assignment';
 import type { DropdownOption } from '@/types/CommonTypes';
 
@@ -47,7 +49,8 @@ const {
     replaceTarget,
     replaceInstructorId,
     replaceRemark,
-    submitReplacement
+    submitReplacement,
+    hasActiveFilters
 } = useAssignment();
 
 const semesterId = ref<number | null>(null);
@@ -210,6 +213,17 @@ onMounted(() => {
                 @filter-change="handleFilterChange"
                 @update:currentPage="(page: number) => fetchAssignments({ page })"
                 @update:limit="(value: number) => fetchAssignments({ perPage: value })">
+                <template #empty>
+                    <EmptyState
+                        :title="$lang.noDutiesYet || 'Nobody is on duty yet'"
+                        :hint="
+                            $lang.noDutiesYetHint ||
+                            'Staff the exam period once departments have sent their invigilators.'
+                        "
+                        :action-label="''"
+                        :is-filtered="hasActiveFilters" />
+                </template>
+
                 <template #cell-exam_schedule="{ item }">
                     <span class="text-text-primary font-medium">
                         {{ (item as Assignment).exam_schedule?.name || '—' }}
@@ -228,14 +242,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-role_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: (item as Assignment).role?.color ?? undefined,
-                            borderColor: (item as Assignment).role?.color ?? undefined
-                        }"
-                        :label="(item as Assignment).role?.name || (item as Assignment).role_code || '—'" />
+                    <StatusBadge
+                        :value="(item as Assignment).role"
+                        :fallback="(item as Assignment).role_code" />
                 </template>
 
                 <template #cell-exam_date="{ item }">
@@ -247,14 +256,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-status_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: statusChip(item as Assignment)?.color ?? undefined,
-                            borderColor: statusChip(item as Assignment)?.color ?? undefined
-                        }"
-                        :label="statusChip(item as Assignment)?.name || (item as Assignment).status?.name || '—'" />
+                    <StatusBadge
+                        :value="statusChip(item as Assignment)"
+                        :fallback="(item as Assignment).status?.name" />
                 </template>
 
                 <template #action="{ item }">

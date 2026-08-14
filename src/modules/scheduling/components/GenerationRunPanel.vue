@@ -4,12 +4,15 @@ import { ref, computed, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import MainSelect from '@/components/common/MainSelect.vue';
 import MainButton from '@/components/common/MainButton.vue';
+import PlacementSuggestions from '@/modules/scheduling/components/PlacementSuggestions.vue';
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
+import { useLanguageStore } from '@/stores/languageStore';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
 import { useGeneration, type GenerationMode } from '@/modules/scheduling/composables/useGeneration';
 import { useLookupValues } from '@/composables/useLookupValues';
 import { EXAM_TYPE_LOOKUP_TYPE } from '@/modules/scheduling/constants/classScheduleStatus';
-import { DROPDOWN_PARAM_KEY, STATUS_SUCCESS, STATUS_WARNING, STATUS_LIGHT } from '@/config/appConfig';
+import { DROPDOWN_PARAM_KEY, STATUS_SUCCESS, STATUS_WARNING } from '@/config/appConfig';
 import type { DropdownOption } from '@/types/CommonTypes';
 
 const props = withDefaults(defineProps<{ mode?: GenerationMode; title?: string; hint?: string }>(), {
@@ -21,7 +24,8 @@ const props = withDefaults(defineProps<{ mode?: GenerationMode; title?: string; 
 const emit = defineEmits<{ (event: 'generated', semesterId: number): void }>();
 
 // One state per mode, so a class run and an exam run never overwrite each other.
-const { isGenerating, run, isRunning, placed, unplaced, skipped, generate } = useGeneration(props.mode);
+const { customizeLanguageData } = useLanguageStore();
+const { isGenerating, run, isRunning, isDryRun, placed, unplaced, skipped, generate } = useGeneration(props.mode);
 
 const semesterId = ref<number | null>(null);
 const examTypeId = ref<number | null>(null);
@@ -31,14 +35,60 @@ const examTypes = useLookupValues(EXAM_TYPE_LOOKUP_TYPE);
 const isExamMode = computed(() => props.mode === 'exam');
 const canGenerate = computed(() => !!semesterId.value && !isGenerating.value);
 
-/** What one placed entry produced: meetings for a class run, a date for an exam. */
-const placedDetail = (item: { meetings?: number; exam_date?: string }) => item.meetings ?? item.exam_date ?? '';
+/** What one placed entry produced: sessions for a class run, a date for an exam. */
+/**
+ * What a placed row shows: how many sessions were laid down for a class run,
+ * or the date for an exam run.
+ *
+ * `meetings` is the summary jsonb's old name for `sessions`. Runs recorded
+ * before the rename still carry it, so both are read — dropping the old name
+ * would blank this column out for every historical run.
+ */
+const placedDetail = (item: { sessions?: number; meetings?: number; exam_date?: string }) =>
+    item.sessions ?? item.meetings ?? item.exam_date ?? '';
 
-const runGeneration = async () => {
+/**
+ * Run the generator, for real or as a rehearsal (C42).
+ *
+ * A rehearsal reports exactly what a real run would place and then leaves the
+ * timetable untouched, so nothing needs refreshing afterwards — and emitting
+ * `generated` would make the caller reload a list that has not changed.
+ */
+/**
+ * A generation reason code in plain language (C38).
+ *
+ * The codes are precise and meaningless to a registrar: `cs_no_room_clash`
+ * describes a database constraint, not a problem anyone can act on. Unknown
+ * codes fall through unchanged rather than being hidden, so a new one is
+ * visible instead of silently blank.
+ */
+const REASONS: Record<string, string> = {
+    no_room_large_enough: 'No room is big enough for this section',
+    no_free_slot_found: 'Every slot in the week is already taken',
+    instructor_over_weekly_limit: 'The instructor would go over their weekly teaching hours',
+    cross_listed_section_busy: 'A cross-listed section is already in class then',
+    cohort_would_cross_campus: 'The section would have to cross campus between periods',
+    cs_no_room_clash: 'The room is already booked at every time that would work',
+    cs_no_instructor_clash: 'The instructor is already teaching at every time that would work',
+    cs_no_section_clash: 'The section is already in class at every time that would work',
+    no_exam_venue_large_enough: 'No hall — even several together — seats this section',
+    cohort_has_too_many_exams_that_day: 'The section already has its limit of exams on every free day',
+    exams_too_close_together: 'Every free window leaves too little rest between exams',
+    semester_has_no_exam_period: 'This semester has no exam period set',
+    no_free_exam_slot_found: 'Every hall is booked for the whole exam period',
+    already_published: 'Already published — left alone'
+};
+
+// The backend catalogue wins where it has the key — the same reason codes are
+// also 422 messages there, so the two never drift apart — then the local map,
+// then the raw code so a new one is visible rather than blank.
+const reasonText = (reason?: string | null) => (reason ? customizeLanguageData(reason, REASONS[reason] ?? reason) : '');
+
+const runGeneration = async (dryRun = false) => {
     if (!semesterId.value) return;
 
-    const finished = await generate(semesterId.value, isExamMode.value ? examTypeId.value : null);
-    if (finished) {
+    const finished = await generate(semesterId.value, isExamMode.value ? examTypeId.value : null, dryRun);
+    if (finished && !dryRun) {
         emit('generated', semesterId.value);
     }
 };
@@ -94,12 +144,24 @@ onMounted(() => {
                     size="normal"
                     show-clear
                     :loading="examTypes.loading.value" />
+                <!--
+                    Rehearse first, commit second — in that reading order,
+                    because trying it is the safe option and should not be the
+                    one users have to go looking for.
+                -->
+                <MainButton
+                    outlined
+                    :label="$lang.tryGeneration || 'Try it'"
+                    :tooltip="$lang.tryGenerationHint || 'See what would be scheduled without changing anything'"
+                    :loading="isGenerating"
+                    :disabled="!canGenerate"
+                    @click="runGeneration(true)" />
                 <MainButton
                     severity="primary"
                     :label="$lang.runGeneration || 'Generate'"
                     :loading="isGenerating"
                     :disabled="!canGenerate"
-                    @click="runGeneration" />
+                    @click="runGeneration(false)" />
             </div>
         </div>
 
@@ -107,21 +169,29 @@ onMounted(() => {
         <div
             v-if="run"
             class="border-border-subtle space-y-4 border-t pt-4">
+            <!--
+                Without this banner a rehearsal reads exactly like a real run:
+                same counts, same lists. The user would believe the timetable
+                had changed when nothing was written.
+            -->
+            <p
+                v-if="isDryRun"
+                class="border-schedule-brand-blue text-schedule-icon-brand rounded-xl border border-dashed px-3 py-2 text-xs">
+                {{
+                    $lang.dryRunNotice ||
+                    'This was a rehearsal — nothing was scheduled. These are the placements a real run would make now.'
+                }}
+            </p>
             <div class="flex flex-wrap items-center gap-3">
-                <Badge
-                    outlined
-                    :variant="STATUS_LIGHT"
-                    :style="{
-                        color: run.status?.color ?? undefined,
-                        borderColor: run.status?.color ?? undefined
-                    }"
-                    :label="run.status?.name || run.status_code || '—'" />
+                <StatusBadge
+                    :value="run.status"
+                    :fallback="run.status_code" />
                 <span class="text-text-secondary text-sm">
                     {{ run.scheduled_count }}
                     {{
                         isExamMode
                             ? $lang.sittingsPlaced || 'schedules placed'
-                            : $lang.meetingsPlaced || 'schedules placed'
+                            : $lang.classSessionsPlaced || 'schedules placed'
                     }}
                 </span>
                 <span
@@ -163,14 +233,28 @@ onMounted(() => {
                     <li
                         v-for="item in unplaced"
                         :key="item.course_offering_id"
-                        class="border-border-subtle flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
-                        <span class="text-text-secondary min-w-0 text-sm">{{ item.label }}</span>
-                        <span class="flex items-center gap-2">
-                            <Badge
-                                :variant="STATUS_WARNING"
-                                :label="`${item.placed}/${item.requested}`" />
-                            <span class="text-text-tertiary text-xs">{{ item.reason }}</span>
-                        </span>
+                        class="border-border-subtle space-y-2 rounded-lg border px-3 py-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-text-secondary min-w-0 text-sm">{{ item.label }}</span>
+                            <span class="flex items-center gap-2">
+                                <Badge
+                                    :variant="STATUS_WARNING"
+                                    :label="`${item.placed}/${item.requested}`" />
+                                <!-- The reason in plain language, not the raw key. -->
+                                <span class="text-text-tertiary text-xs">{{ reasonText(item.reason) }}</span>
+                            </span>
+                        </div>
+
+                        <!--
+                            Saying what went wrong is not the same as saying
+                            what to do. A rehearsal is excluded: its failures
+                            describe a timetable that was never written, so
+                            offering to place into it would be misleading.
+                        -->
+                        <PlacementSuggestions
+                            v-if="!isExamMode && !isDryRun"
+                            :course-offering-id="item.course_offering_id"
+                            @placed="emit('generated', semesterId!)" />
                     </li>
                 </ul>
             </div>

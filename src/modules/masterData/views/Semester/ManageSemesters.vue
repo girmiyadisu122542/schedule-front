@@ -5,7 +5,7 @@ import { useLanguageStore } from '@/stores/languageStore';
 import { useSemester } from '@/modules/masterData/composables/useSemester';
 import { LOOKUP_TYPE } from '@/modules/masterData/constants/lookupTypes';
 
-import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import BoolChip from '@/components/common/BoolChip.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
@@ -15,7 +15,7 @@ import ChangeStatusModal from '@/components/common/ChangeStatusModal.vue';
 import SemesterFormDialog from '@/modules/masterData/components/Semester/SemesterFormDialog.vue';
 
 import ClockTimeTimerArrow from '@/assets/icons/ClockTimeTimerArrow.vue';
-import { STATUS_LIGHT } from '@/config/appConfig';
+
 import type { Semester } from '@/modules/masterData/types/semester';
 
 const { customizeLanguageData } = useLanguageStore();
@@ -108,14 +108,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-status_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: statusChip(item as Semester)?.color ?? undefined,
-                            borderColor: statusChip(item as Semester)?.color ?? undefined
-                        }"
-                        :label="statusChip(item as Semester)?.name || (item as Semester).status?.name || '—'" />
+                    <StatusBadge
+                        :value="statusChip(item as Semester)"
+                        :fallback="(item as Semester).status?.name" />
                 </template>
 
                 <template #action="{ item }">

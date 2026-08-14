@@ -17,6 +17,13 @@ import FilterIcon from '@/assets/icons/FilterIcon.vue';
 defineProps<{
     /** Shown under the heading — what this particular screen filters. */
     hint?: string;
+    /**
+     * Midterm / final / makeup / quiz, for the exam screens.
+     *
+     * Empty on the class screens, where the picker is hidden entirely rather
+     * than shown with nothing in it.
+     */
+    examTypes?: Array<{ label: string; value: string }>;
 }>();
 
 const {
@@ -24,6 +31,7 @@ const {
     departmentId,
     programId,
     sectionId,
+    examTypeCode,
     collegeDropdown,
     departmentDropdown,
     programDropdown,
@@ -124,6 +132,22 @@ const {
                 search
                 show-clear
                 :loading="sectionDropdown.loading.value" />
+
+            <!--
+                A different axis from the cascade above: choosing a sitting
+                does not clear the department, and choosing a department does
+                not clear the sitting.
+            -->
+            <MainSelect
+                v-if="examTypes?.length"
+                v-model="examTypeCode"
+                :label-text="$lang.examType || 'Exam type'"
+                :options="examTypes"
+                option-label="label"
+                option-value="value"
+                :placeholder="$lang.allExamTypes || 'All exam types'"
+                size="normal"
+                show-clear />
 
             <!-- Screen-specific controls sit alongside the hierarchy. -->
             <slot />

@@ -30,6 +30,18 @@ export interface ScheduleSetting {
     exam_duration_minutes: number;
     exam_gap_minutes: number;
     exam_period_days: number;
+    /** Per exam type, keyed by lookup code: {"midterm": 90, "final": 180}. */
+    exam_type_durations: Record<string, number> | null;
+    max_exams_per_day: number;
+    min_hours_between_exams: number;
+    students_per_invigilator: number;
+    min_invigilators_per_room: number;
+    /** Placement preferences. Zero switches one off entirely. */
+    weight_spread_sessions: number;
+    weight_avoid_gaps: number;
+    weight_room_fit: number;
+    weight_same_building: number;
+    allow_cross_campus_day: boolean;
     is_active: boolean;
     /** The grid these inputs produce. Read-only. */
     periods: TimeSlot[];
@@ -60,6 +72,15 @@ export interface ScheduleSettingForm {
     exam_duration_minutes: string;
     exam_gap_minutes: string;
     exam_period_days: string;
+    max_exams_per_day: string;
+    min_hours_between_exams: string;
+    students_per_invigilator: string;
+    min_invigilators_per_room: string;
+    weight_spread_sessions: string;
+    weight_avoid_gaps: string;
+    weight_room_fit: string;
+    weight_same_building: string;
+    allow_cross_campus_day: boolean;
     is_active: boolean;
 }
 

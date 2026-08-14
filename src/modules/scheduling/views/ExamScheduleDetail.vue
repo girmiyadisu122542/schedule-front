@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useLanguageStore } from '@/stores/languageStore';
@@ -7,18 +7,24 @@ import { useDetailResource } from '@/composables/useDetailResource';
 import { getExamSchedule } from '@/modules/scheduling/services/examScheduleService';
 import { fetchAssignments } from '@/modules/invigilation/services/examInvigilatorAssignmentService';
 
-import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import DetailPage from '@/components/common/DetailPage.vue';
 import DetailField from '@/components/common/DetailField.vue';
 import DetailPanel from '@/components/common/DetailPanel.vue';
+import MainButton from '@/components/common/MainButton.vue';
+import ExamInvigilatorsDialog from '@/modules/scheduling/components/ExamInvigilatorsDialog.vue';
 
 import CalendarCheckIcon from '@/assets/icons/CalendarCheckIcon.vue';
-import { STATUS_LIGHT } from '@/config/appConfig';
+
 import type { Assignment } from '@/modules/invigilation/types/assignment';
 
 const route = useRoute();
 const { customizeLanguageData } = useLanguageStore();
 const { item: sitting, isLoading, notFound, load } = useDetailResource(getExamSchedule);
+
+/** Opens the per-hall staffing dialog, and forces the roster panel to redraw. */
+const invigilatorsVisible = ref(false);
+const rosterKey = ref(0);
 
 const breadcrumbItems = computed(() => [
     { label: customizeLanguageData('examSchedules', 'Exam Timetable'), to: '/scheduling/exams' },
@@ -59,21 +65,12 @@ onMounted(() => load(String(route.params.uuid)));
         :not-found="notFound"
         :not-found-title="$lang.examScheduleNotFound || 'Exam schedule not found'">
         <template #header-actions>
-            <Badge
+            <StatusBadge
                 v-if="sitting?.exam_type"
-                outlined
-                :variant="STATUS_LIGHT"
-                :style="{
-                    color: sitting.exam_type.color ?? undefined,
-                    borderColor: sitting.exam_type.color ?? undefined
-                }"
-                :label="sitting.exam_type.name" />
-            <Badge
+                :value="sitting.exam_type" />
+            <StatusBadge
                 v-if="sitting?.status"
-                outlined
-                :variant="STATUS_LIGHT"
-                :style="{ color: sitting.status.color ?? undefined, borderColor: sitting.status.color ?? undefined }"
-                :label="sitting.status.name" />
+                :value="sitting.status" />
         </template>
 
         <template #fields>
@@ -89,7 +86,7 @@ onMounted(() => load(String(route.params.uuid)));
                 :label="$lang.examHall || 'Hall'"
                 :value="sitting?.room?.name" />
             <DetailField
-                :label="$lang.section || 'Cohort'"
+                :label="$lang.section || 'Section'"
                 :value="sitting?.section?.name" />
             <DetailField
                 :label="$lang.invigilators || 'Invigilators needed'"
@@ -130,13 +127,33 @@ onMounted(() => load(String(route.params.uuid)));
             </dl>
         </section>
 
-        <DetailPanel
+        <div
             v-if="sitting"
-            :title="$lang.invigilatorAssignments || 'Duty Roster'"
-            :fetcher="() => fetchAssignments({ exam_schedule_id: sitting!.id, limit: 50 })"
-            :columns="dutyColumns"
-            :empty-text="$lang.noDutiesHere || 'Nobody is on duty at this exam yet.'"
-            to="/invigilation/assignments"
-            :see-all-label="$lang.seeAll || 'See all'" />
+            class="space-y-3">
+            <DetailPanel
+                :key="rosterKey"
+                :title="$lang.invigilatorAssignments || 'Duty Roster'"
+                :fetcher="() => fetchAssignments({ exam_schedule_id: sitting!.id, limit: 50 })"
+                :columns="dutyColumns"
+                :empty-text="$lang.noDutiesHere || 'Nobody is on duty at this exam yet.'"
+                to="/invigilation/assignments"
+                :see-all-label="$lang.seeAll || 'See all'" />
+
+            <MainButton
+                v-if="$can('assignInvigilator')"
+                outlined
+                :label="$lang.manageInvigilators || 'Invigilators'"
+                @click="invigilatorsVisible = true" />
+        </div>
+
+        <!--
+            Staffing this hall. The panel is keyed on a counter so it refetches
+            when the dialog changes something — its fetcher runs once on mount
+            and has no other way to know.
+        -->
+        <ExamInvigilatorsDialog
+            v-model:visible="invigilatorsVisible"
+            :sitting="sitting"
+            @changed="rosterKey++" />
     </DetailPage>
 </template>

@@ -13,7 +13,7 @@ import type { CrudFilter } from '@/composables/useCrudResource';
  * Search, filters and refresh for a calendar view.
  *
  * The table gets these from `MainTable`; the calendar has no table to get them
- * from, and a semester's worth of meetings with no way to narrow them is not a
+ * from, and a semester's worth of sessions with no way to narrow them is not a
  * working screen. It takes the SAME `filterFields` the table does, so both
  * views filter on one definition.
  */

@@ -34,7 +34,7 @@ const emit = defineEmits<{ (e: 'update:modelValue', value: ScheduleViewMode): vo
                     ? 'bg-surface-card text-text-primary shadow-sm'
                     : 'text-text-tertiary hover:text-text-secondary'
             "
-            :title="$lang.calendarViewHint || 'One cohort at a time, laid out by day and time'"
+            :title="$lang.calendarViewHint || 'One section at a time, laid out by day and time'"
             @click="emit('update:modelValue', SCHEDULE_VIEW.CALENDAR)">
             <Calendar class="h-4 w-4" />
             {{ calendarLabel || $lang.calendarView || 'Calendar' }}

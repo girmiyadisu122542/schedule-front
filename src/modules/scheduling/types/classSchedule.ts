@@ -24,12 +24,12 @@ export interface OfferingRef extends ScheduleRef {
 }
 
 /**
- * One recurring weekly class meeting, as `GET /schedule/class-schedules` emits
+ * One recurring weekly class session, as `GET /schedule/class-schedules` emits
  * it (backend `App\Models\Schedule\ClassSchedule::indexFields`).
  *
  * `state` is NOT an `is_active` flag: it is the conflict-liveness bit the three
  * PostgreSQL EXCLUDE constraints read. It never moves on its own — cancelling a
- * meeting sets `status_code = 'cancelled'` AND `state = 0` in one write, which
+ * session sets `status_code = 'cancelled'` AND `state = 0` in one write, which
  * is what frees the room, instructor and section slot.
  */
 export interface ClassSchedule {
@@ -46,6 +46,15 @@ export interface ClassSchedule {
     generation_run_id: number | null;
     day_of_week: number;
     state: number;
+    /**
+     * A hand placement the next generation run must not take away. Stays live
+     * either way, so the database constraints keep its slot reserved.
+     */
+    is_pinned: boolean;
+    /** Set only for a one-off session; a weekly rule leaves it null. */
+    specific_date?: string | null;
+    /** Weeks cut out of this weekly rule — holidays and the like. */
+    exceptions?: Array<{ id: number; exception_date: string; reason: string | null }>;
     start_time: string;
     end_time: string;
     time_range: string;
@@ -91,13 +100,13 @@ export interface PaginatedClassSchedules {
  * One offering the generator placed in full.
  *
  * The two generators report different detail — a class run says how many weekly
- * meetings it wrote, an exam run says which date it landed on — so both keys are
+ * sessions it wrote, an exam run says which date it landed on — so both keys are
  * optional and the panel renders whichever is present.
  */
 export interface GenerationPlaced {
     course_offering_id: number;
     label: string;
-    meetings?: number;
+    sessions?: number;
     exam_date?: string;
 }
 
@@ -143,6 +152,18 @@ export interface GenerationRun {
     semester?: ScheduleRef | null;
     run_by?: User | null;
     summary: GenerationSummary;
+    /**
+     * Whether this run kept a restorable copy of what it wrote. False for the
+     * runs recorded before snapshots existed, and for failed runs — so the
+     * restore action has to be hidden, not merely disabled, when it is false.
+     */
+    has_snapshot?: boolean;
+    /**
+     * A rehearsal (C42). Its numbers look exactly like a real run's, so the UI
+     * has to keep saying so — otherwise a user reads "6 placed" and believes
+     * the timetable changed.
+     */
+    is_dry_run?: boolean;
     started_at: string | null;
     completed_at: string | null;
     created_at?: string;

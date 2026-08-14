@@ -29,6 +29,9 @@ export interface Semester {
     is_current: boolean;
     start_date: string;
     end_date: string;
+    /** The exam period. Mandatory — the exam generator reads it directly. */
+    exam_start_date: string;
+    exam_end_date: string;
     status?: LookupValueRef | null;
     academic_year?: SemesterAcademicYearRef | null;
     created_by?: User | null;
@@ -45,6 +48,9 @@ export interface SemesterForm {
     name: string;
     start_date: string;
     end_date: string;
+    /** The exam period. Mandatory — the exam generator reads it directly. */
+    exam_start_date: string;
+    exam_end_date: string;
     is_current: boolean;
 }
 

@@ -38,7 +38,7 @@ const cards = computed(() => [
     },
     {
         key: 'classes',
-        title: customizeLanguageData('publishedMeetings', 'Published class meetings'),
+        title: customizeLanguageData('publishedClassSessions', 'Published class sessions'),
         value: stats.value?.published_class_schedules_count ?? 0,
         icon: markRaw(Calendar),
         variant: 'success' as const

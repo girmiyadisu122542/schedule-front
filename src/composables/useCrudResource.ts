@@ -186,6 +186,20 @@ export function useCrudResource<TItem extends CrudItem, TForm extends object, TP
 
     const filterFields = computed(() => config.filters?.value ?? defaultFilters.value);
 
+    /**
+     * Whether the list is being narrowed by anything the user chose.
+     *
+     * An empty list means two different things: nothing exists yet, or nothing
+     * matches. The first calls for creating a record, the second for clearing
+     * a filter — and offering "Create" to somebody whose filter simply excluded
+     * everything invites them to duplicate a record they already have.
+     */
+    const hasActiveFilters = computed(
+        () =>
+            !!searchQuery.value ||
+            Object.values(filters.value).some((value) => value !== null && value !== undefined && value !== '')
+    );
+
     const fetchItems = async (params: FetchParams = {}) => {
         isLoading.value = true;
         try {
@@ -381,7 +395,7 @@ export function useCrudResource<TItem extends CrudItem, TForm extends object, TP
      *
      * Exposed separately because a slice whose write actions depend on status
      * (class and exam schedules) still wants the detail link on EVERY row —
-     * reading a published meeting is not an edit.
+     * reading a published class session is not an edit.
      */
     const getDetailOption = (item: TItem): ActionOption | null => {
         if (!config.detailPath || !allowedRoutesStore.can(action('see'))) return null;
@@ -449,6 +463,7 @@ export function useCrudResource<TItem extends CrudItem, TForm extends object, TP
         filterFields,
         confirmState,
         searchQuery,
+        hasActiveFilters,
         currentPage,
         limit,
         dialogVisible,
@@ -469,7 +484,7 @@ export function useCrudResource<TItem extends CrudItem, TForm extends object, TP
         getActionOptions,
         getDetailOption,
         // Exposed so a slice can put its own semantic action behind the same
-        // confirm dialog the factory uses — scheduling's Cancel meeting does.
+        // confirm dialog the factory uses — scheduling's Cancel session does.
         openConfirmDialog
     };
 }

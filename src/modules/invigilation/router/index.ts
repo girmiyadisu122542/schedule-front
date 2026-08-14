@@ -17,11 +17,6 @@ const invigilationRoutes: Array<RouteRecordRaw> = [
                 component: () => import('@/modules/invigilation/views/ManageInvigilationRequests.vue')
             },
             {
-                path: 'availabilities',
-                name: 'InvigilatorAvailabilities',
-                component: () => import('@/modules/invigilation/views/ManageAvailabilities.vue')
-            },
-            {
                 path: 'assignments',
                 name: 'InvigilatorAssignments',
                 component: () => import('@/modules/invigilation/views/ManageAssignments.vue')
