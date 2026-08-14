@@ -10,13 +10,14 @@ import { fetchExamSchedules } from '@/modules/scheduling/services/examScheduleSe
 import { useSchedulingConstants } from '@/modules/scheduling/composables/useSchedulingConstants';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import BoolChip from '@/components/common/BoolChip.vue';
 import DetailPage from '@/components/common/DetailPage.vue';
 import DetailField from '@/components/common/DetailField.vue';
 import DetailPanel from '@/components/common/DetailPanel.vue';
 
 import KeyIcon from '@/assets/icons/KeyIcon.vue';
-import { STATUS_LIGHT, STATUS_SUCCESS } from '@/config/appConfig';
+import { STATUS_SUCCESS } from '@/config/appConfig';
 import type { ClassSchedule } from '@/modules/scheduling/types/classSchedule';
 import type { ExamSchedule } from '@/modules/scheduling/types/examSchedule';
 
@@ -33,14 +34,14 @@ const breadcrumbItems = computed(() => [
 /** "New Block → Main Campus" — a room's location is only complete through both. */
 const location = computed(() => [room.value?.building?.name, room.value?.campus?.name].filter(Boolean).join(' → '));
 
-const meetingColumns = computed(() => [
+const sessionColumns = computed(() => [
     {
         key: 'day_of_week',
         label: customizeLanguageData('dayOfWeek', 'Day'),
         format: (row: ClassSchedule) => schedulingConstants.dayName(row.day_of_week)
     },
     { key: 'time_range', label: customizeLanguageData('time', 'Time'), numeric: true },
-    { key: 'name', label: customizeLanguageData('classSchedule', 'Meeting') },
+    { key: 'name', label: customizeLanguageData('classSchedule', 'Class session') },
     {
         key: 'status',
         label: customizeLanguageData('status', 'Status'),
@@ -51,7 +52,7 @@ const meetingColumns = computed(() => [
 const sittingColumns = computed(() => [
     { key: 'exam_date', label: customizeLanguageData('examDate', 'Date'), numeric: true },
     { key: 'time_range', label: customizeLanguageData('time', 'Time'), numeric: true },
-    { key: 'name', label: customizeLanguageData('examSitting', 'Sitting') },
+    { key: 'name', label: customizeLanguageData('examSitting', 'Exam') },
     {
         key: 'status',
         label: customizeLanguageData('status', 'Status'),
@@ -75,12 +76,9 @@ onMounted(() => {
         :not-found="notFound"
         :not-found-title="$lang.roomNotFound || 'Room not found'">
         <template #header-actions>
-            <Badge
+            <StatusBadge
                 v-if="room?.room_type"
-                outlined
-                :variant="STATUS_LIGHT"
-                :style="{ color: room.room_type.color ?? undefined, borderColor: room.room_type.color ?? undefined }"
-                :label="room.room_type.name" />
+                :value="room.room_type" />
             <Badge
                 v-if="room?.is_exam_venue"
                 :variant="STATUS_SUCCESS"
@@ -105,7 +103,7 @@ onMounted(() => {
                 numeric />
             <!-- Spaced exam seating is far below teaching capacity; both are shown. -->
             <DetailField
-                :label="$lang.examCapacity || 'Exam capacity'"
+                :label="$lang.examCapacity || 'Exam seating capacity'"
                 :value="room?.exam_capacity"
                 numeric />
             <DetailField
@@ -117,8 +115,8 @@ onMounted(() => {
             <DetailPanel
                 :title="$lang.classSchedules || 'Class Timetable'"
                 :fetcher="() => fetchClassSchedules({ room_id: room!.id, limit: 100 })"
-                :columns="meetingColumns"
-                :empty-text="$lang.noMeetingsHere || 'Nothing is scheduled in this room yet.'"
+                :columns="sessionColumns"
+                :empty-text="$lang.noClassSessionsHere || 'Nothing is scheduled in this room yet.'"
                 to="/scheduling/classes"
                 :see-all-label="$lang.seeAll || 'See all'" />
 

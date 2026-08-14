@@ -34,6 +34,11 @@ export interface Course {
     lab_hours_per_week: number | null;
     tutorial_hours_per_week: number | null;
     sessions_per_week: number | null;
+    /**
+     * How long this course's exam runs. Null means the study mode's default —
+     * a three-hour paper should not have to be typed on every row.
+     */
+    exam_duration_minutes: number | null;
     is_active: boolean;
     course_type?: LookupValueRef | null;
     department?: CourseDepartmentRef | null;
@@ -54,6 +59,7 @@ export interface CourseForm {
     lab_hours_per_week: string;
     tutorial_hours_per_week: string;
     sessions_per_week: string;
+    exam_duration_minutes: string;
     is_active: boolean;
 }
 

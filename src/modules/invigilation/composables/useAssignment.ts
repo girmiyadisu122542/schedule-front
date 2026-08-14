@@ -5,19 +5,28 @@ import { createSharedComposable } from '@vueuse/core';
 import { useLanguageStore } from '@/stores/languageStore';
 import { useAllowedRoutesStore } from '@/stores/allowedRoutesStore';
 import { useLookupValues, type LookupValueRef } from '@/composables/useLookupValues';
-import { INVIGILATION_LOOKUP_TYPE, INVIGILATION_STATUS } from '@/modules/invigilation/constants/invigilationStatus';
+import {
+    INVIGILATION_LOOKUP_TYPE,
+    INVIGILATOR_ROLE_LOOKUP_TYPE,
+    INVIGILATION_STATUS
+} from '@/modules/invigilation/constants/invigilationStatus';
+import { useDropdownOptions } from '@/composables/useDropdownOptions';
 import type { Assignment, AutoAssignResult } from '@/modules/invigilation/types/assignment';
 import {
     fetchAssignments,
     respondToAssignment,
     replaceInvigilator,
+    removeAssignment,
     autoAssignInvigilators,
     type AssignmentListParams
 } from '@/modules/invigilation/services/examInvigilatorAssignmentService';
 import { readApiErrorMessage } from '@/utils/apiError';
 import type { ActionOption } from '@/components/common/ActionMenu.vue';
-import type { Pagination, FetchParams } from '@/types/CommonTypes';
-import { DEFAULT_PAGE_LIMIT, FIRST_PAGE, STATUS_DANGER } from '@/config/appConfig';
+import type { DropdownOption, Pagination, FetchParams } from '@/types/CommonTypes';
+import { DEFAULT_PAGE_LIMIT, DROPDOWN_PARAM_KEY, FIRST_PAGE, STATUS_DANGER } from '@/config/appConfig';
+
+/** Pages the export walks in — big enough that most rosters take one round trip. */
+const EXPORT_PAGE_SIZE = 200;
 
 import CheckCircle from '@/assets/icons/CheckCircle.vue';
 import XCircleIcon from '@/assets/icons/XCircleIcon.vue';
@@ -37,6 +46,15 @@ function assignmentManager() {
     /** The status catalogue: labels, colours and the ids `respond` posts. */
     const statuses = useLookupValues(INVIGILATION_LOOKUP_TYPE);
 
+    /** Chief / assistant / reserve — what the Role filter offers. */
+    const roles = useLookupValues(INVIGILATOR_ROLE_LOOKUP_TYPE);
+
+    const semesterDropdown = useDropdownOptions<DropdownOption>('/semesters', { [DROPDOWN_PARAM_KEY]: true });
+    // Named so a filter row reads "CS101 · Final (2026-08-20 09:00–12:00)".
+    const examScheduleDropdown = useDropdownOptions<DropdownOption>('/exam-schedules', {
+        [DROPDOWN_PARAM_KEY]: true
+    });
+
     const isLoading = ref(false);
     const isSavingAction = ref(false);
     const items = ref<{ data: Assignment[]; pagination: Pagination | null }>({ data: [], pagination: null });
@@ -53,7 +71,7 @@ function assignmentManager() {
         readApiErrorMessage(error, customizeLanguageData('somethingWentWrong', 'Something went wrong'));
 
     const tableColumns = computed(() => [
-        { key: 'exam_schedule', label: customizeLanguageData('examSitting', 'Sitting') },
+        { key: 'exam_schedule', label: customizeLanguageData('examSitting', 'Exam') },
         { key: 'instructor', label: customizeLanguageData('instructor', 'Invigilator') },
         { key: 'role_code', label: customizeLanguageData('invigilatorRole', 'Role') },
         { key: 'exam_date', label: customizeLanguageData('examDate', 'Date') },
@@ -69,8 +87,76 @@ function assignmentManager() {
                 label: status.name,
                 value: status.code
             }))
+        },
+        // A duty sheet is pinned up for ONE examination — narrowing to a
+        // semester and then to a single sitting is how an examinations office
+        // actually reads this screen, and the export follows the same filters.
+        {
+            label: customizeLanguageData('semester', 'Semester'),
+            key: 'semester_id',
+            options: semesterDropdown.options.value.map((semester: DropdownOption) => ({
+                label: semester.name,
+                value: semester.id
+            }))
+        },
+        {
+            label: customizeLanguageData('examSitting', 'Exam'),
+            key: 'exam_schedule_id',
+            options: examScheduleDropdown.options.value.map((sitting: DropdownOption) => ({
+                label: sitting.name,
+                value: sitting.id
+            }))
+        },
+        {
+            label: customizeLanguageData('invigilatorRole', 'Role'),
+            key: 'role_code',
+            options: roles.options.value.map((role: LookupValueRef) => ({
+                label: role.name,
+                value: role.code
+            }))
         }
     ]);
+
+    /**
+     * Every duty the current filters match, not just the page on screen.
+     *
+     * A roster printed from page 1 of 4 is worse than no roster: it looks
+     * complete. The list endpoint is paginated, so the export walks it.
+     */
+    const fetchAllForExport = async (): Promise<Assignment[]> => {
+        const collected: Assignment[] = [];
+        let page = FIRST_PAGE;
+
+        for (;;) {
+            const result = await fetchAssignments({
+                page,
+                limit: EXPORT_PAGE_SIZE,
+                search: searchQuery.value || undefined,
+                ...filters.value
+            } as AssignmentListParams);
+
+            collected.push(...result.data);
+
+            const lastPage = result.pagination?.last_page ?? page;
+            if (page >= lastPage || !result.data.length) break;
+
+            page += 1;
+        }
+
+        return collected;
+    };
+
+    /**
+     * Whether the roster is being narrowed by anything the user chose.
+     *
+     * Not built on `useCrudResource` — a duty has no create dialog — so the
+     * flag is derived here rather than inherited.
+     */
+    const hasActiveFilters = computed(
+        () =>
+            !!searchQuery.value ||
+            Object.values(filters.value).some((value) => value !== null && value !== undefined && value !== '')
+    );
 
     /** Label and colour both come from the lookup value — never hardcoded. */
     const statusChip = (assignment: Assignment) => statuses.resolve(assignment.status_code);
@@ -199,6 +285,15 @@ function assignmentManager() {
         assignment.status_code === INVIGILATION_STATUS.ASSIGNED ||
         assignment.status_code === INVIGILATION_STATUS.ACCEPTED;
 
+    /**
+     * Take somebody off a hall.
+     *
+     * Run directly rather than behind a confirmation: it is reversible in one
+     * click, and the backend refuses it outright once the duty has been
+     * answered — so the destructive case cannot be reached from here at all.
+     */
+    const removeFromDuty = (assignment: Assignment) => runAction(() => removeAssignment(assignment.id));
+
     const getActionOptions = (assignment: Assignment): ActionOption[] => {
         const options: ActionOption[] = [];
 
@@ -231,6 +326,17 @@ function assignmentManager() {
             });
         }
 
+        // Unanswered only: once accepted or declined there is a record of what
+        // the person said, and Replace is the way to change it.
+        if (assignment.status_code === INVIGILATION_STATUS.ASSIGNED && allowedRoutesStore.can('assignInvigilator')) {
+            options.push({
+                label: customizeLanguageData('removeInvigilator', 'Take off duty'),
+                icon: XCircleIcon,
+                variant: STATUS_DANGER,
+                onClick: () => removeFromDuty(assignment)
+            });
+        }
+
         return options;
     };
 
@@ -244,9 +350,14 @@ function assignmentManager() {
         currentPage,
         limit,
         statuses,
+        roles,
+        semesterDropdown,
+        examScheduleDropdown,
+        fetchAllForExport,
         lastRun,
 
         statusChip,
+        hasActiveFilters,
         fetchAssignments: fetchItems,
         handleSearch,
         handleFilterChange,

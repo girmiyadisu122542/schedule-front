@@ -34,6 +34,10 @@ export interface ExamSchedulePayload {
     start_time: string;
     end_time: string;
     required_invigilators?: number;
+    /** Accommodations (C21) — null when the sitting needs none, which is most. */
+    accommodation_note?: string | null;
+    accommodation_extra_minutes?: number | null;
+    accommodation_room_id?: number | null;
 }
 
 export async function fetchExamSchedules(params: ExamScheduleListParams = {}): Promise<PaginatedExamSchedules> {
@@ -110,13 +114,24 @@ export async function cancelExamSchedule(id: number): Promise<MutationResult<Exa
  * Trigger automatic exam scheduling for one semester. Returns the same
  * `schedule_generation_runs` shape the class generator writes.
  */
+/**
+ * Pin a draft sitting so the next generation run schedules around it.
+ */
+export async function pinExamSchedule(id: number, isPinned: boolean): Promise<MutationResult<ExamSchedule>> {
+    const response = await axiosInstance.post(`${BASE}/${id}/pin`, { is_pinned: isPinned });
+
+    return response.data;
+}
+
 export async function generateExamSchedules(
     semesterId: number,
-    examTypeId?: number | null
+    examTypeId?: number | null,
+    dryRun = false
 ): Promise<MutationResult<GenerationRun>> {
     const response = await axiosInstance.post('/schedule/generate-exam', {
         semester_id: semesterId,
-        exam_type_lookup_value_id: examTypeId ?? null
+        exam_type_lookup_value_id: examTypeId ?? null,
+        dry_run: dryRun
     });
 
     return response.data;

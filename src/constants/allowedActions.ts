@@ -3,8 +3,8 @@ import type { MasterDataAllowedAction } from '@/modules/masterData/constants/all
 import type { OfferingAllowedAction } from '@/modules/offerings/constants/allowedActions';
 import type { SchedulingAllowedAction } from '@/modules/scheduling/constants/allowedActions';
 import type {
-    InvigilationAllowedAction,
-    InvigilationAssignmentAllowedAction
+    InvigilationAssignmentAllowedAction,
+    InvigilationRequestAllowedAction
 } from '@/modules/invigilation/constants/allowedActions';
 
 export type AllowedAction =
@@ -12,5 +12,5 @@ export type AllowedAction =
     | MasterDataAllowedAction
     | OfferingAllowedAction
     | SchedulingAllowedAction
-    | InvigilationAllowedAction
-    | InvigilationAssignmentAllowedAction;
+    | InvigilationAssignmentAllowedAction
+    | InvigilationRequestAllowedAction;

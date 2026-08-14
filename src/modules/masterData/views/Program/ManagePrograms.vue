@@ -7,6 +7,7 @@ import { useLookupValues } from '@/composables/useLookupValues';
 import { LOOKUP_TYPE } from '@/modules/masterData/constants/lookupTypes';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
@@ -87,7 +88,7 @@ onMounted(() => {
                 <p class="text-md text-text-tertiary font-normal">
                     {{
                         $lang.manageProgramsDesc ||
-                        'A program gives a section its cohort identity — "BSc CS Year 2 Section A".'
+                        'A program gives a section its identity — "BSc CS Year 2 Section A".'
                     }}
                 </p>
             </div>
@@ -118,17 +119,22 @@ onMounted(() => {
                     <span class="text-text-secondary">{{ (item as Program).department?.name || '—' }}</span>
                 </template>
 
+                <!-- Which generation grid this programme is scheduled into. -->
+                <template #cell-study_mode="{ item }">
+                    <StatusBadge
+                        v-if="(item as Program).study_mode"
+                        :value="(item as Program).study_mode" />
+                    <span
+                        v-else
+                        class="text-text-tertiary">
+                        {{ $lang.regular || 'Regular' }}
+                    </span>
+                </template>
+
                 <template #cell-degree_level="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: degreeLevelChip(item as Program)?.color ?? undefined,
-                            borderColor: degreeLevelChip(item as Program)?.color ?? undefined
-                        }"
-                        :label="
-                            degreeLevelChip(item as Program)?.name || (item as Program).degree_level?.name || '—'
-                        " />
+                    <StatusBadge
+                        :value="degreeLevelChip(item as Program)"
+                        :fallback="(item as Program).degree_level?.name" />
                 </template>
 
                 <template #cell-duration_years="{ item }">

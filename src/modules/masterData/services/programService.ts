@@ -21,6 +21,8 @@ export interface ProgramPayload {
     code?: string | null;
     department_id: number;
     degree_level_lookup_value_id: number;
+    /** Null means the regular grid — the backend treats an absent mode that way. */
+    study_mode_lookup_value_id?: number | null;
     duration_years: number;
     is_active?: boolean;
 }

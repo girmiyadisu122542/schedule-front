@@ -22,9 +22,17 @@ export interface Program {
     department_id: number;
     degree_level_lookup_value_id: number;
     degree_level_code: string | null;
+    /**
+     * How the programme is delivered. It decides which generation grid the
+     * scheduler places it into — regular on weekdays, extension at the weekend.
+     * Nullable: a programme that names no mode is taught on the regular grid.
+     */
+    study_mode_lookup_value_id: number | null;
+    study_mode_code: string | null;
     duration_years: number;
     is_active: boolean;
     degree_level?: LookupValueRef | null;
+    study_mode?: LookupValueRef | null;
     department?: ProgramDepartmentRef | null;
     created_by?: User | null;
     created_at?: string;
@@ -36,6 +44,7 @@ export interface ProgramForm {
     code: string;
     department_id: number | null;
     degree_level_lookup_value_id: number | null;
+    study_mode_lookup_value_id: number | null;
     duration_years: string;
     is_active: boolean;
 }

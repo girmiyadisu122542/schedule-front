@@ -2,12 +2,17 @@
 import { computed, onMounted, ref } from 'vue';
 
 import { useLanguageStore } from '@/stores/languageStore';
+import { useCurrentSemester } from '@/composables/useCurrentSemester';
+import { useInvigilatorExport } from '@/modules/invigilation/composables/useInvigilatorExport';
 import { useAssignment } from '@/modules/invigilation/composables/useAssignment';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
+import ScheduleExportMenu from '@/modules/scheduling/components/ScheduleExportMenu.vue';
 import MainTable from '@/components/common/MainTable.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import MainDialog from '@/components/common/MainDialog.vue';
 import MainSelect from '@/components/common/MainSelect.vue';
 import MainButton from '@/components/common/MainButton.vue';
@@ -15,11 +20,12 @@ import TextArea from '@/components/common/TextArea.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 
 import ShieldCheckAltIcon from '@/assets/icons/ShieldCheckAltIcon.vue';
-import { DROPDOWN_PARAM_KEY, STATUS_LIGHT, STATUS_WARNING } from '@/config/appConfig';
+import { DROPDOWN_PARAM_KEY, STATUS_WARNING } from '@/config/appConfig';
 import type { Assignment } from '@/modules/invigilation/types/assignment';
 import type { DropdownOption } from '@/types/CommonTypes';
 
 const { customizeLanguageData } = useLanguageStore();
+const currentSemester = useCurrentSemester();
 const {
     isLoading,
     isSavingAction,
@@ -27,6 +33,10 @@ const {
     tableColumns,
     filterFields,
     statuses,
+    roles,
+    semesterDropdown,
+    examScheduleDropdown,
+    fetchAllForExport,
     lastRun,
     statusChip,
     fetchAssignments,
@@ -39,17 +49,29 @@ const {
     replaceTarget,
     replaceInstructorId,
     replaceRemark,
-    submitReplacement
+    submitReplacement,
+    hasActiveFilters
 } = useAssignment();
 
 const semesterId = ref<number | null>(null);
-const semesterDropdown = useDropdownOptions<DropdownOption>('/semesters', { [DROPDOWN_PARAM_KEY]: true });
 // Only someone able to invigilate can take over a duty; the backend refuses the
 // rest, so do not offer them.
 const instructorDropdown = useDropdownOptions<DropdownOption>('/instructors', {
     [DROPDOWN_PARAM_KEY]: true,
     can_invigilate: true
 });
+
+/**
+ * The duty roster export — what an examinations office pins up: who is on
+ * duty, where and when, grouped by sitting.
+ *
+ * It honours the filter bar, so narrowing to one exam produces that exam's
+ * duty sheet. It exports every matching duty rather than the visible page: a
+ * roster printed from page 1 of 4 looks complete and is not.
+ */
+const { isExporting, exportRoster } = useInvigilatorExport(() => currentSemester.semester.value?.name);
+
+const runExport = async (format: string) => exportRoster(format, await fetchAllForExport());
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('invigilatorAssignments', 'Duty Roster') }]);
 
@@ -66,7 +88,11 @@ onMounted(() => {
     // useLookupValues auto-fetches from its own onMounted, which never fires
     // inside a shared composable — pull the status catalogue explicitly.
     statuses.refetch();
+    // Shared composables never fire their own onMounted — pull the filter
+    // catalogues explicitly, same reason as the statuses above.
+    roles.refetch();
     semesterDropdown.fetchOptions();
+    examScheduleDropdown.fetchOptions();
     instructorDropdown.fetchOptions();
 });
 </script>
@@ -80,16 +106,23 @@ onMounted(() => {
         </div>
 
         <div>
-            <div class="mb-4">
-                <h1 class="text-text-primary text-xl font-semibold">
-                    {{ $lang.invigilatorAssignments || 'Duty Roster' }}
-                </h1>
-                <p class="text-md text-text-tertiary font-normal">
-                    {{
-                        $lang.assignmentsDesc ||
-                        'Who is on duty at each sitting. Declining frees the invigilator’s window; the record of the decline stays.'
-                    }}
-                </p>
+            <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-text-primary text-xl font-semibold">
+                        {{ $lang.invigilatorAssignments || 'Duty Roster' }}
+                    </h1>
+                    <p class="text-md text-text-tertiary font-normal">
+                        {{
+                            $lang.assignmentsDesc ||
+                            'Who is on duty at each exam. Declining frees the invigilator’s window; the record of the decline stays.'
+                        }}
+                    </p>
+                </div>
+
+                <!-- The duty sheet an examinations office pins up. -->
+                <ScheduleExportMenu
+                    :loading="isExporting"
+                    @export="runExport" />
             </div>
 
             <!-- ---- staff a whole semester ---- -->
@@ -104,7 +137,7 @@ onMounted(() => {
                         <p class="text-text-tertiary mt-1 text-sm">
                             {{
                                 $lang.autoAssignHint ||
-                                'Every sitting is filled from the windows the department offered, fewest duties first. Double-booking is refused by the database.'
+                                'Every exam is filled from the windows the department offered, fewest duties first. Double-booking is refused by the database.'
                             }}
                         </p>
                     </div>
@@ -180,6 +213,17 @@ onMounted(() => {
                 @filter-change="handleFilterChange"
                 @update:currentPage="(page: number) => fetchAssignments({ page })"
                 @update:limit="(value: number) => fetchAssignments({ perPage: value })">
+                <template #empty>
+                    <EmptyState
+                        :title="$lang.noDutiesYet || 'Nobody is on duty yet'"
+                        :hint="
+                            $lang.noDutiesYetHint ||
+                            'Staff the exam period once departments have sent their invigilators.'
+                        "
+                        :action-label="''"
+                        :is-filtered="hasActiveFilters" />
+                </template>
+
                 <template #cell-exam_schedule="{ item }">
                     <span class="text-text-primary font-medium">
                         {{ (item as Assignment).exam_schedule?.name || '—' }}
@@ -198,14 +242,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-role_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: (item as Assignment).role?.color ?? undefined,
-                            borderColor: (item as Assignment).role?.color ?? undefined
-                        }"
-                        :label="(item as Assignment).role?.name || (item as Assignment).role_code || '—'" />
+                    <StatusBadge
+                        :value="(item as Assignment).role"
+                        :fallback="(item as Assignment).role_code" />
                 </template>
 
                 <template #cell-exam_date="{ item }">
@@ -217,14 +256,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-status_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: statusChip(item as Assignment)?.color ?? undefined,
-                            borderColor: statusChip(item as Assignment)?.color ?? undefined
-                        }"
-                        :label="statusChip(item as Assignment)?.name || (item as Assignment).status?.name || '—'" />
+                    <StatusBadge
+                        :value="statusChip(item as Assignment)"
+                        :fallback="(item as Assignment).status?.name" />
                 </template>
 
                 <template #action="{ item }">

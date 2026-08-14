@@ -37,8 +37,14 @@ export async function getGenerationRun(key: string | number): Promise<Generation
  * Trigger automatic class scheduling for one semester. Returns the run row —
  * its `summary` names every offering that was placed, skipped or left short.
  */
-export async function generateClassSchedules(semesterId: number): Promise<MutationResult<GenerationRun>> {
-    const response = await axiosInstance.post('/schedule/generate-class', { semester_id: semesterId });
+export async function generateClassSchedules(
+    semesterId: number,
+    dryRun = false
+): Promise<MutationResult<GenerationRun>> {
+    const response = await axiosInstance.post('/schedule/generate-class', {
+        semester_id: semesterId,
+        dry_run: dryRun
+    });
 
     return response.data;
 }
@@ -50,6 +56,21 @@ export async function generateClassSchedules(semesterId: number): Promise<Mutati
  */
 export async function fetchSchedulingConstants(): Promise<SchedulingConstants> {
     const response = await axiosInstance.get('/constants/scheduling');
+
+    return response.data;
+}
+
+/**
+ * Put back the timetable this run produced (C41).
+ *
+ * The snapshot is replayed through ordinary inserts, so every database
+ * constraint still applies — rows whose slots have since been taken come back
+ * as `rejected` rather than being forced over whatever now holds them.
+ */
+export async function restoreGenerationRun(
+    id: number
+): Promise<MutationResult<{ restored: number; rejected: number; reasons: string[] }>> {
+    const response = await axiosInstance.post(`${RUNS}/${id}/restore`);
 
     return response.data;
 }

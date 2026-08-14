@@ -71,10 +71,18 @@ export const useLanguageStore = defineStore('lang', () => {
         );
     });
 
-    const customizeLanguageData = (key: string, fallback: string = '', replacements: Record<string, any> = {} ): string => {
+    const customizeLanguageData = (
+        key: string,
+        fallback: string = '',
+        replacements: Record<string, any> = {}
+    ): string => {
         let text: string = translations.value?.[key] || fallback;
         Object.entries(replacements).forEach(([placeholder, value]) => {
-            text = text.split(`{{${placeholder}}}`).join(String(value ?? '')).split(`:${placeholder}`).join(String(value ?? ''));
+            text = text
+                .split(`{{${placeholder}}}`)
+                .join(String(value ?? ''))
+                .split(`:${placeholder}`)
+                .join(String(value ?? ''));
         });
         return text;
     };
@@ -90,6 +98,6 @@ export const useLanguageStore = defineStore('lang', () => {
         setLanguage,
         setIsInitialized,
         fetchFrontLanguages,
-        customizeLanguageData,
+        customizeLanguageData
     };
 });

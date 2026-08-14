@@ -73,9 +73,25 @@ export async function replaceInvigilator(
     return response.data;
 }
 
-/** Staff every sitting in a semester from the offered availability windows. */
+/** Staff every sitting in a semester from the invigilators departments sent. */
 export async function autoAssignInvigilators(semesterId: number): Promise<MutationResult<AutoAssignResult>> {
     const response = await axiosInstance.post('/invigilation/auto-assign', { semester_id: semesterId });
+
+    return response.data;
+}
+
+/**
+ * Take one invigilator off a sitting.
+ *
+ * Only a duty nobody has answered yet. Once somebody has accepted or declined,
+ * their answer is a record — `replaceInvigilator` is the honest way to change
+ * who stands in the hall, and it keeps what they said.
+ *
+ * The sitting's required count follows the removal down, so a hall does not
+ * immediately read as short of a number it no longer needs.
+ */
+export async function removeAssignment(id: number): Promise<MutationResult<unknown>> {
+    const response = await axiosInstance.delete(`${BASE}/${id}`);
 
     return response.data;
 }

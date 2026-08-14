@@ -28,6 +28,8 @@ const emit = defineEmits<{
 
 const departmentDropdown = useDropdownOptions<DropdownOption>('/departments', { [DROPDOWN_PARAM_KEY]: true });
 const degreeLevels = useLookupValues(LOOKUP_TYPE.DEGREE_LEVEL);
+/** Decides which generation grid the scheduler places this programme into. */
+const studyModes = useLookupValues(LOOKUP_TYPE.STUDY_MODE);
 
 onMounted(() => {
     departmentDropdown.fetchOptions();
@@ -94,6 +96,23 @@ onMounted(() => {
                         size="normal"
                         is-required
                         :loading="degreeLevels.loading.value" />
+                    <MainSelect
+                        v-model="form.study_mode_lookup_value_id"
+                        :label-text="$lang.studyMode || 'Study Mode'"
+                        :options="studyModes.options.value"
+                        option-label="name"
+                        option-value="id"
+                        :placeholder="$lang.selectStudyMode || 'Choose a study mode'"
+                        :helper-message="
+                            $lang.studyModeHint ||
+                            'Decides which days and hours this programme is scheduled in. Leave empty for the regular timetable.'
+                        "
+                        :invalid="!!errors.study_mode_lookup_value_id"
+                        :message="errors.study_mode_lookup_value_id"
+                        message-type="error"
+                        size="normal"
+                        show-clear
+                        :loading="studyModes.loading.value" />
                     <InputText
                         v-model="form.duration_years"
                         :label="$lang.durationYears || 'Duration (years)'"

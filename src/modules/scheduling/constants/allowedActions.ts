@@ -13,6 +13,7 @@ export type SchedulingAllowedAction =
     | 'createClassSchedule'
     | 'updateClassSchedule'
     | 'deleteClassSchedule'
+    | 'confirmClassSchedule'
     | 'publishClassSchedule'
     | 'cancelClassSchedule'
     | 'runClassScheduleGeneration'
@@ -24,4 +25,9 @@ export type SchedulingAllowedAction =
     | 'confirmExamSchedule'
     | 'publishExamSchedule'
     | 'cancelExamSchedule'
-    | 'runExamScheduleGeneration';
+    | 'runExamScheduleGeneration'
+    // The generation grid under Configuration. No delete key: a grid belongs
+    // to a seeded study mode and is deactivated, never removed.
+    | 'seeScheduleSetting'
+    | 'createScheduleSetting'
+    | 'updateScheduleSetting';

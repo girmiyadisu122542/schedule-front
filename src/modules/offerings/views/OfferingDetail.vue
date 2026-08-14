@@ -9,6 +9,7 @@ import { OFFERING_LOOKUP_TYPE, APPROVAL_DECISION } from '@/modules/offerings/con
 import type { LookupValueRef } from '@/composables/useLookupValues';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import TextArea from '@/components/common/TextArea.vue';
 import MainSelect from '@/components/common/MainSelect.vue';
@@ -97,14 +98,9 @@ onMounted(() => {
                         </p>
                     </div>
 
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: statusChip?.color ?? undefined,
-                            borderColor: statusChip?.color ?? undefined
-                        }"
-                        :label="statusChip?.name || offering.status?.name || '—'" />
+                    <StatusBadge
+                        :value="statusChip"
+                        :fallback="offering.status?.name" />
                 </div>
 
                 <dl class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -222,14 +218,9 @@ onMounted(() => {
                 <template #step="{ index }">
                     <div class="flex flex-wrap items-start justify-between gap-3 py-1">
                         <!-- Left: which tier acted. -->
-                        <Badge
-                            outlined
-                            :variant="STATUS_LIGHT"
-                            :style="{
-                                color: approvals[index]?.level?.color ?? undefined,
-                                borderColor: approvals[index]?.level?.color ?? undefined
-                            }"
-                            :label="approvals[index]?.level?.name || approvals[index]?.level_code || '—'" />
+                        <StatusBadge
+                            :value="approvals[index]?.level"
+                            :fallback="approvals[index]?.level_code" />
 
                         <!-- Centre: what they decided, and why if they said. -->
                         <div class="min-w-0 flex-1 px-2">

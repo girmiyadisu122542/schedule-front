@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { useLanguageStore } from '@/stores/languageStore';
 import { useTimetable } from '@/modules/scheduling/composables/useTimetable';
@@ -8,28 +8,74 @@ import { useDropdownOptions } from '@/composables/useDropdownOptions';
 import Badge from '@/components/common/Badge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainSelect from '@/components/common/MainSelect.vue';
-import MainButton from '@/components/common/MainButton.vue';
-import Skeleton from '@/components/common/Skeleton.vue';
-import PagePlaceholder from '@/components/common/PagePlaceholder.vue';
+import WeekTimeGrid from '@/modules/scheduling/components/WeekTimeGrid.vue';
+import MasterTimetableGrid from '@/modules/scheduling/components/MasterTimetableGrid.vue';
+import ScheduleViewToggle from '@/modules/scheduling/components/ScheduleViewToggle.vue';
+import ScheduleExportMenu from '@/modules/scheduling/components/ScheduleExportMenu.vue';
+import ScheduleFilterPanel from '@/modules/scheduling/components/ScheduleFilterPanel.vue';
 
 import GridIcon from '@/assets/icons/GridIcon.vue';
+import { useMasterTimetable } from '@/modules/scheduling/composables/useMasterTimetable';
+import { useScheduleExport } from '@/modules/scheduling/composables/useScheduleExport';
+import { SCHEDULE_VIEW, type ScheduleViewMode } from '@/modules/scheduling/constants/scheduleView';
 import { DROPDOWN_PARAM_KEY, STATUS_LIGHT } from '@/config/appConfig';
 import type { DropdownOption } from '@/types/CommonTypes';
 
 const { customizeLanguageData } = useLanguageStore();
-const { isLoading, days, isEmpty, sectionId, instructorId, currentSemester, load, applyFilters, clearFilters } =
-    useTimetable();
+const {
+    isLoading,
+    events,
+    gridDays,
+    axisBounds,
+    sessions,
+    instructorId,
+    currentSemester,
+    scheduleFilters,
+    schedulingConstants,
+    load
+} = useTimetable();
 
-const sectionDropdown = useDropdownOptions<DropdownOption>('/sections', { [DROPDOWN_PARAM_KEY]: true });
 const instructorDropdown = useDropdownOptions<DropdownOption>('/instructors', { [DROPDOWN_PARAM_KEY]: true });
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('timetable', 'Timetable') }]);
 
-const hasFilters = computed(() => sectionId.value !== null || instructorId.value !== null);
+// ---- per-cohort grid / master timetable ----------------------------------
+const viewMode = ref<ScheduleViewMode>(SCHEDULE_VIEW.CALENDAR);
+
+const master = useMasterTimetable(events, gridDays, schedulingConstants.timeSlots, () =>
+    customizeLanguageData('unassignedCohort', 'Unassigned')
+);
+
+// ---- export ---------------------------------------------------------------
+const { isExporting, exportSchedule } = useScheduleExport(() => ({
+    filePrefix: 'class-timetable',
+    title: customizeLanguageData('timetable', 'Timetable'),
+    subtitle: currentSemester.semester.value?.name,
+    days: gridDays.value,
+    slots: schedulingConstants.timeSlots.value
+}));
+
+/**
+ * The session types actually on this timetable, as a legend. Built from what is
+ * on screen rather than from the whole catalogue — a legend for a session type
+ * nothing uses is noise.
+ */
+const legend = computed(() => {
+    const seen = new Map<string, string>();
+
+    sessions.value.forEach((session) => {
+        const type = session.session_type;
+        if (type?.name && !seen.has(type.name)) {
+            seen.set(type.name, type.color || 'var(--color-schedule-brand-blue)');
+        }
+    });
+
+    return [...seen.entries()].map(([name, color]) => ({ name, color }));
+});
 
 onMounted(() => {
     load();
-    sectionDropdown.fetchOptions();
+    scheduleFilters.load();
     instructorDropdown.fetchOptions();
 });
 </script>
@@ -53,102 +99,70 @@ onMounted(() => {
                 </p>
             </div>
 
-            <Badge
-                v-if="currentSemester.semester.value"
-                outlined
-                :variant="STATUS_LIGHT"
-                :label="currentSemester.semester.value.name" />
-        </div>
-
-        <!-- ---- narrow it to one cohort or one teacher ---- -->
-        <section class="schedule-card border-border-default rounded-2xl border p-6">
-            <div class="flex flex-wrap items-end gap-3">
-                <MainSelect
-                    v-model="sectionId"
-                    class="min-w-56"
-                    :label-text="$lang.section || 'Section'"
-                    :options="sectionDropdown.options.value"
-                    option-label="name"
-                    option-value="id"
-                    :placeholder="$lang.allSections || 'All sections'"
-                    size="normal"
-                    search
-                    show-clear
-                    :loading="sectionDropdown.loading.value" />
-                <MainSelect
-                    v-model="instructorId"
-                    class="min-w-56"
-                    :label-text="$lang.instructor || 'Instructor'"
-                    :options="instructorDropdown.options.value"
-                    option-label="name"
-                    option-value="id"
-                    :placeholder="$lang.allInstructors || 'All instructors'"
-                    size="normal"
-                    search
-                    show-clear
-                    :loading="instructorDropdown.loading.value" />
-                <MainButton
-                    severity="primary"
-                    :label="$lang.applyFilter || 'Apply'"
-                    :loading="isLoading"
-                    @click="applyFilters" />
-                <MainButton
-                    v-if="hasFilters"
+            <div class="flex flex-wrap items-center gap-3">
+                <Badge
+                    v-if="currentSemester.semester.value"
                     outlined
-                    :label="$lang.clearFilter || 'Clear'"
-                    @click="clearFilters" />
+                    :variant="STATUS_LIGHT"
+                    :label="currentSemester.semester.value.name" />
+
+                <ScheduleViewToggle
+                    v-model="viewMode"
+                    show-master />
+
+                <ScheduleExportMenu
+                    :loading="isExporting"
+                    @export="(format: string) => exportSchedule(format, events)" />
             </div>
-        </section>
-
-        <Skeleton v-if="isLoading && !days.length" />
-
-        <PagePlaceholder
-            v-else-if="isEmpty"
-            :title="$lang.noPublishedMeetings || 'Nothing published yet'"
-            :description="
-                $lang.noPublishedMeetingsHint ||
-                'Generate a timetable and publish its meetings — only published ones appear here.'
-            " />
-
-        <!--
-            One column per weekday that actually has something on it. A day with
-            no meetings is dropped rather than rendered empty.
-        -->
-        <div
-            v-else
-            class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <section
-                v-for="day in days"
-                :key="day.id"
-                class="schedule-card border-border-default rounded-2xl border p-5">
-                <header class="border-border-subtle mb-3 flex items-center justify-between border-b pb-2">
-                    <h2 class="text-text-primary text-base font-semibold">{{ day.name }}</h2>
-                    <span class="text-text-tertiary text-xs">
-                        {{ day.meetings.length }} {{ $lang.meetingsLabel || 'meetings' }}
-                    </span>
-                </header>
-
-                <ul class="space-y-3">
-                    <li
-                        v-for="meeting in day.meetings"
-                        :key="meeting.id"
-                        class="border-border-subtle rounded-xl border px-3 py-2">
-                        <div class="flex items-start justify-between gap-2">
-                            <span class="text-text-primary min-w-0 text-sm font-medium">
-                                {{ meeting.course_offering?.name || '—' }}
-                            </span>
-                            <span class="text-text-secondary shrink-0 text-xs tabular-nums">
-                                {{ meeting.time_range }}
-                            </span>
-                        </div>
-                        <p class="text-text-tertiary mt-1 text-xs">
-                            {{ meeting.room?.name || $lang.noRoom || 'No room' }} ·
-                            {{ meeting.instructor?.name || $lang.noInstructorYet || 'No instructor yet' }}
-                            <template v-if="meeting.session_type">· {{ meeting.session_type.name }}</template>
-                        </p>
-                    </li>
-                </ul>
-            </section>
         </div>
+
+        <!-- ---- narrow it to a cohort, or to one teacher ---- -->
+        <ScheduleFilterPanel
+            :hint="$lang.timetableFilterHint || 'Narrow the week to a college, department, programme or section.'">
+            <!-- The teacher's own week — the one dimension outside the hierarchy. -->
+            <MainSelect
+                v-model="instructorId"
+                :label-text="$lang.instructor || 'Instructor'"
+                :options="instructorDropdown.options.value"
+                option-label="name"
+                option-value="id"
+                :placeholder="$lang.allInstructors || 'All instructors'"
+                size="normal"
+                search
+                show-clear
+                :loading="instructorDropdown.loading.value" />
+        </ScheduleFilterPanel>
+
+        <!-- ---- what the block colours mean ---- -->
+        <div
+            v-if="legend.length"
+            class="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span
+                v-for="entry in legend"
+                :key="entry.name"
+                class="text-text-tertiary flex items-center gap-1.5 text-xs">
+                <span
+                    class="h-2.5 w-2.5 rounded-sm"
+                    :style="{ backgroundColor: entry.color }" />
+                {{ entry.name }}
+            </span>
+        </div>
+
+        <WeekTimeGrid
+            v-if="viewMode === SCHEDULE_VIEW.CALENDAR"
+            :days="gridDays"
+            :events="events"
+            :loading="isLoading"
+            :bounds="axisBounds"
+            :empty-label="$lang.noPublishedClassSessions || 'Nothing published for this semester yet'" />
+
+        <!-- Every cohort on one sheet, banded by department › programme. -->
+        <MasterTimetableGrid
+            v-else
+            :columns="master.columns.value"
+            :day-bands="master.dayBands.value"
+            :groups="master.groups.value"
+            :loading="isLoading"
+            :empty-label="$lang.noPublishedClassSessions || 'Nothing published for this semester yet'" />
     </div>
 </template>

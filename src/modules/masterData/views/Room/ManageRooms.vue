@@ -7,6 +7,7 @@ import { useLookupValues } from '@/composables/useLookupValues';
 import { LOOKUP_TYPE } from '@/modules/masterData/constants/lookupTypes';
 
 import Badge from '@/components/common/Badge.vue';
+import StatusBadge from '@/components/common/StatusBadge.vue';
 import BoolChip from '@/components/common/BoolChip.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
@@ -127,14 +128,9 @@ onMounted(() => {
                 </template>
 
                 <template #cell-room_type_code="{ item }">
-                    <Badge
-                        outlined
-                        :variant="STATUS_LIGHT"
-                        :style="{
-                            color: roomTypeChip(item as Room)?.color ?? undefined,
-                            borderColor: roomTypeChip(item as Room)?.color ?? undefined
-                        }"
-                        :label="roomTypeChip(item as Room)?.name || (item as Room).room_type?.name || '—'" />
+                    <StatusBadge
+                        :value="roomTypeChip(item as Room)"
+                        :fallback="(item as Room).room_type?.name" />
                 </template>
 
                 <template #cell-capacity="{ item }">

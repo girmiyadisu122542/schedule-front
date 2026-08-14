@@ -10,6 +10,15 @@ export interface ActionOption {
     onClick: (event?: MouseEvent) => void;
     variant?: 'danger' | 'info' | 'success' | 'warning' | 'activate' | 'deactivate' | 'primary';
     isOnFooter?: boolean;
+    /**
+     * Optional heading this action sits under.
+     *
+     * A row with eight ungrouped actions is a wall — the reader has to check
+     * every line to find the one they want. Grouping turns it into three short
+     * lists they can skip between. Options with no group render first, exactly
+     * as they always did, so every existing caller is unaffected.
+     */
+    group?: string;
 }
 
 const props = defineProps<{
@@ -33,6 +42,35 @@ const filteredMainOptions = computed(() => {
     const term = search.value.trim().toLowerCase();
     return term ? mainOptions.value.filter((option) => option.label?.toLowerCase().includes(term)) : mainOptions.value;
 });
+
+/**
+ * The visible options as ordered sections.
+ *
+ * First insertion wins the position, so a caller controls the order of both
+ * the groups and the actions inside them purely by the order it pushes them —
+ * no separate ordering field to keep in step.
+ */
+const groupedOptions = computed(() => {
+    const sections: Array<{ label: string; options: ActionOption[] }> = [];
+
+    filteredMainOptions.value.forEach((option) => {
+        const label = option.group ?? '';
+        const existing = sections.find((section) => section.label === label);
+
+        if (existing) {
+            existing.options.push(option);
+
+            return;
+        }
+
+        sections.push({ label, options: [option] });
+    });
+
+    return sections;
+});
+
+/** Whether any heading is worth drawing — one unnamed section needs none. */
+const hasGroups = computed(() => groupedOptions.value.some((section) => section.label !== ''));
 
 const isOpen = ref(false);
 const triggerRef = ref<HTMLElement | null>(null);
@@ -148,42 +186,58 @@ onUnmounted(closeMenu);
                             @click.stop />
                     </div>
 
-                    <div class="flex min-h-0 flex-1 flex-col space-y-1 overflow-y-auto pr-1">
-                        <button
-                            v-for="(option, index) in filteredMainOptions"
-                            :key="index"
-                            @click="
-                                (e) => {
-                                    option.onClick(e);
-                                    closeMenu();
-                                }
-                            "
-                            class="group dark:hover:bg-schedule-dark-border flex w-full items-center rounded-xl px-4 py-3 text-left transition-colors hover:bg-gray-50">
-                            <component
-                                :is="option.icon"
-                                :class="[
-                                    'mr-3 h-5 w-5 transition-colors',
-                                    'text-gray-700 dark:text-gray-500',
-                                    option.variant === 'danger'
-                                        ? 'group-hover:text-red-500'
-                                        : option.variant === 'success'
-                                          ? 'group-hover:text-green-500'
-                                          : 'group-hover:text-gray-900 dark:group-hover:text-white'
-                                ]" />
+                    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
+                        <div
+                            v-for="(section, sectionIndex) in groupedOptions"
+                            :key="section.label || sectionIndex"
+                            class="flex flex-col space-y-1"
+                            :class="
+                                hasGroups && sectionIndex > 0
+                                    ? 'dark:border-schedule-dark-border mt-1 border-t border-gray-100 pt-1'
+                                    : ''
+                            ">
+                            <p
+                                v-if="section.label"
+                                class="px-4 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                                {{ section.label }}
+                            </p>
 
-                            <span
-                                :class="[
-                                    'text-sm font-medium transition-colors',
-                                    'text-gray-700 dark:text-gray-300',
-                                    option.variant === 'danger'
-                                        ? 'group-hover:text-red-600'
-                                        : option.variant === 'success'
-                                          ? 'group-hover:text-green-600'
-                                          : 'group-hover:text-gray-900 dark:group-hover:text-white'
-                                ]">
-                                {{ option.label }}
-                            </span>
-                        </button>
+                            <button
+                                v-for="(option, index) in section.options"
+                                :key="index"
+                                @click="
+                                    (e) => {
+                                        option.onClick(e);
+                                        closeMenu();
+                                    }
+                                "
+                                class="group dark:hover:bg-schedule-dark-border flex w-full items-center rounded-xl px-4 py-3 text-left transition-colors hover:bg-gray-50">
+                                <component
+                                    :is="option.icon"
+                                    :class="[
+                                        'mr-3 h-5 w-5 transition-colors',
+                                        'text-gray-700 dark:text-gray-500',
+                                        option.variant === 'danger'
+                                            ? 'group-hover:text-red-500'
+                                            : option.variant === 'success'
+                                              ? 'group-hover:text-green-500'
+                                              : 'group-hover:text-gray-900 dark:group-hover:text-white'
+                                    ]" />
+
+                                <span
+                                    :class="[
+                                        'text-sm font-medium transition-colors',
+                                        'text-gray-700 dark:text-gray-300',
+                                        option.variant === 'danger'
+                                            ? 'group-hover:text-red-600'
+                                            : option.variant === 'success'
+                                              ? 'group-hover:text-green-600'
+                                              : 'group-hover:text-gray-900 dark:group-hover:text-white'
+                                    ]">
+                                    {{ option.label }}
+                                </span>
+                            </button>
+                        </div>
                         <p
                             v-if="showSearch && !filteredMainOptions.length"
                             class="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">

@@ -115,6 +115,13 @@ export const MAX_DESCRIPTION_LENGTH = 1000;
 export const MAX_PHONE_LENGTH = 20;
 export const MAX_COURSE_HOURS = 99.99;
 export const MAX_SESSIONS_PER_WEEK = 14;
+/**
+ * Bounds on a course's own exam length, mirroring the backend Form Request
+ * and the `schedule_settings` CHECK constraints. Null there means "use the
+ * study mode's default", so these only bound a value that IS given.
+ */
+export const MIN_EXAM_DURATION_MINUTES = 15;
+export const MAX_EXAM_DURATION_MINUTES = 480;
 // Mirrors MAX_EXAM_INVIGILATORS in helper/AppConfig.php.
 export const MAX_EXAM_INVIGILATORS = 20;
 export const MAX_INSTRUCTOR_EMAIL_LENGTH = 150;
@@ -340,6 +347,16 @@ export const EXPORT_FORMAT_XLSX = 'xlsx';
 export const EXPORT_FORMAT_CSV = 'csv';
 export const EXPORT_FORMATS = [EXPORT_FORMAT_XLSX, EXPORT_FORMAT_CSV] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
+
+/**
+ * PDF is a SCHEDULE-only format, produced in the browser from what is on
+ * screen. It is deliberately kept out of `EXPORT_FORMATS`: that list narrows
+ * what the backend master-data export will accept, and the backend writes
+ * spreadsheets only — offering PDF there would just 422.
+ */
+export const EXPORT_FORMAT_PDF = 'pdf';
+export const SCHEDULE_EXPORT_FORMATS = [EXPORT_FORMAT_XLSX, EXPORT_FORMAT_PDF] as const;
+export type ScheduleExportFormat = (typeof SCHEDULE_EXPORT_FORMATS)[number];
 
 export const IMPORT_MODE_CREATE_ONLY = 'create_only';
 export const IMPORT_MODE_UPSERT = 'upsert';

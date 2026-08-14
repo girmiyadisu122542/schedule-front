@@ -18,11 +18,15 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 /** Which timetable a panel generates. */
 export type GenerationMode = 'class' | 'exam';
 
-type Trigger = (semesterId: number, examTypeId?: number | null) => Promise<MutationResult<GenerationRun>>;
+type Trigger = (
+    semesterId: number,
+    examTypeId?: number | null,
+    dryRun?: boolean
+) => Promise<MutationResult<GenerationRun>>;
 
 const TRIGGERS: Record<GenerationMode, Trigger> = {
-    class: (semesterId) => generateClassSchedules(semesterId),
-    exam: (semesterId, examTypeId) => generateExamSchedules(semesterId, examTypeId)
+    class: (semesterId, _examTypeId, dryRun) => generateClassSchedules(semesterId, dryRun),
+    exam: (semesterId, examTypeId, dryRun) => generateExamSchedules(semesterId, examTypeId, dryRun)
 };
 
 /**
@@ -37,6 +41,15 @@ function generationManager(mode: GenerationMode) {
 
     const isGenerating = ref(false);
     const run = ref<GenerationRun | null>(null);
+
+    /**
+     * Whether the run on screen was a rehearsal (C42).
+     *
+     * Read from the run itself rather than remembered from the click, so a run
+     * re-read by the poll cannot lose the fact — and the UI must keep saying
+     * so, since a dry run's numbers look exactly like a real one's.
+     */
+    const isDryRun = computed(() => !!run.value?.is_dry_run);
 
     /** Backend message when there is one, localized fallback otherwise. */
     const genericError = (error: unknown) =>
@@ -78,15 +91,16 @@ function generationManager(mode: GenerationMode) {
      *
      * @param semesterId
      * @param examTypeId which sitting to generate; exam mode only, finals by default
+     * @param dryRun rehearse it — report what would be placed, change nothing
      *
      * @returns true when a run finished, so the caller can refresh its list
      */
-    const generate = async (semesterId: number, examTypeId?: number | null): Promise<boolean> => {
+    const generate = async (semesterId: number, examTypeId?: number | null, dryRun = false): Promise<boolean> => {
         isGenerating.value = true;
         run.value = null;
 
         try {
-            const started = await TRIGGERS[mode](semesterId, examTypeId);
+            const started = await TRIGGERS[mode](semesterId, examTypeId, dryRun);
             run.value = started.data;
 
             if (started.data.status_code === GENERATION_STATUS.RUNNING) {
@@ -112,7 +126,7 @@ function generationManager(mode: GenerationMode) {
         }
     };
 
-    return { isGenerating, run, isRunning, hasFailed, placed, unplaced, skipped, generate };
+    return { isGenerating, run, isRunning, hasFailed, isDryRun, placed, unplaced, skipped, generate };
 }
 
 /**

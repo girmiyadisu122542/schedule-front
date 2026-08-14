@@ -10,6 +10,13 @@ const schedulingRoutes: Array<RouteRecordRaw> = [
         name: 'scheduling',
         children: [
             {
+                // Configuration, not day-to-day work: the grid automatic
+                // scheduling places into. Mirrors FrontendPaths::SCHEDULE_SETTINGS.
+                path: 'settings',
+                name: 'ScheduleSettings',
+                component: () => import('@/modules/scheduling/views/ManageScheduleSettings.vue')
+            },
+            {
                 path: 'classes',
                 name: 'ClassSchedules',
                 component: () => import('@/modules/scheduling/views/ManageClassSchedules.vue')

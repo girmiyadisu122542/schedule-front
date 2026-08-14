@@ -21,12 +21,43 @@ export interface SidebarMenuGroup {
     order?: number;
 }
 
+/** A department the signed-in user owns, as the backend names it. */
+export interface ScopedDepartment {
+    id: number;
+    uuid?: string;
+    code?: string;
+    name: string;
+}
+
+/**
+ * Which departments the user may act on.
+ *
+ * `unrestricted` is NOT the same as an empty list: unrestricted means the whole
+ * institution (super admin, or a role holding `see:all:departments`), while an
+ * empty list means the user is bound to no department and will see nothing.
+ * The server enforces the same bound — this copy only shapes the UI.
+ */
+export interface DepartmentScope {
+    unrestricted: boolean;
+    /** What the user may READ — includes a department they only teach in. */
+    departments: ScopedDepartment[];
+    /**
+     * What they may ACT FOR — heading it, or leading its college.
+     *
+     * Reading and managing are different claims: an instructor sees their
+     * department's timetable, but answering a registrar on that department's
+     * behalf is the head's job.
+     */
+    managed_departments: ScopedDepartment[];
+}
+
 export interface Entitlements {
     is_active: boolean;
     is_super_admin: boolean;
     trial: any;
     modules: string[];
     features: string[];
+    scope: DepartmentScope;
 }
 
 const EMPTY_ENTITLEMENTS: Entitlements = {
@@ -34,7 +65,11 @@ const EMPTY_ENTITLEMENTS: Entitlements = {
     is_super_admin: false,
     trial: null,
     modules: [],
-    features: []
+    features: [],
+    // Restricted-with-nothing until the server says otherwise: a store that
+    // defaulted to unrestricted would flash the whole institution's filters
+    // during the first load.
+    scope: { unrestricted: false, departments: [], managed_departments: [] }
 };
 
 export const useAllowedRoutesStore = defineStore('allowedRoutes', () => {
@@ -55,7 +90,14 @@ export const useAllowedRoutesStore = defineStore('allowedRoutes', () => {
             allowedRoutes.value = response.data.routes || [];
             allowedActions.value = (response.data.actions || []).map((enc: string) => decryptAction(enc));
             sidebarMenu.value = response.data.sidebarMenu || [];
-            entitlements.value = response.data.entitlements || { ...EMPTY_ENTITLEMENTS };
+            entitlements.value = {
+                ...EMPTY_ENTITLEMENTS,
+                ...(response.data.entitlements ?? {}),
+                scope: {
+                    ...EMPTY_ENTITLEMENTS.scope,
+                    ...(response.data.entitlements?.scope ?? {})
+                }
+            };
             authRedirect.value = response.data.authRedirect || '/dashboard';
             unauthRedirect.value = response.data.unauthRedirect || '/login';
         } catch (error) {
@@ -118,6 +160,18 @@ export const useAllowedRoutesStore = defineStore('allowedRoutes', () => {
     const entitledModuleCodes = computed<string[]>(() => entitlements.value.modules ?? []);
     const isSuperAdmin = computed<boolean>(() => !!entitlements.value.is_super_admin);
 
+    /** The departments this user owns; empty when unrestricted. */
+    const scopedDepartments = computed<ScopedDepartment[]>(() => entitlements.value.scope?.departments ?? []);
+    /** True when the user sees only their own departments. */
+    const isScopeRestricted = computed<boolean>(() => !(entitlements.value.scope?.unrestricted ?? false));
+
+    /** The departments this user may act FOR — empty when unrestricted. */
+    const managedDepartments = computed<ScopedDepartment[]>(() => entitlements.value.scope?.managed_departments ?? []);
+
+    /** Whether the user may act for a department at all. */
+    const managesDepartment = (departmentId: number): boolean =>
+        !isScopeRestricted.value || managedDepartments.value.some((department) => department.id === departmentId);
+
     const filteredSidebarMenu = computed(() => {
         if (!selectedModule.value) return sidebarMenu.value;
         const code = selectedModule.value.code;
@@ -135,6 +189,10 @@ export const useAllowedRoutesStore = defineStore('allowedRoutes', () => {
         entitlements,
         entitledModuleCodes,
         isSuperAdmin,
+        scopedDepartments,
+        isScopeRestricted,
+        managedDepartments,
+        managesDepartment,
         authRedirect,
         unauthRedirect,
         isLoading,

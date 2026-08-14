@@ -5,15 +5,30 @@
  * The frontend only ever compares against these — labels, colours and the legal
  * transition edges all come from the backend lookup catalogue at runtime.
  */
+/**
+ * How a programme is delivered. It is what decides WHICH generation grid an
+ * offering is scheduled into — regular on weekdays, extension at the weekend.
+ */
+export const STUDY_MODE_LOOKUP_TYPE = 'STUDY_MODE';
+
 export const CLASS_SCHEDULE_LOOKUP_TYPE = 'CLASS_SCHEDULE_STATUS';
 export const SESSION_TYPE_LOOKUP_TYPE = 'SESSION_TYPE';
 
 /**
- * `draft → published → cancelled`. A draft is never cancelled: it is deleted,
- * because nothing has been announced yet.
+ * Two paths to publication, mirroring the exam lifecycle: `draft → published`
+ * when nothing needs signing off, or `draft → pending_confirmation → confirmed
+ * → published` when the department that owns the teaching load must agree
+ * first. Published sessions are cancelled; drafts are deleted, because nothing
+ * has been announced yet.
  */
 export const CLASS_SCHEDULE_STATUS = {
     DRAFT: 'draft',
+    // The optional department confirmation step (C26). Two paths to
+    // publication: straight out of draft, or via the department that owns the
+    // teaching load. Which edges are legal is declared in `lookup_transitions`;
+    // these codes only decide which buttons make sense to show.
+    PENDING_CONFIRMATION: 'pending_confirmation',
+    CONFIRMED: 'confirmed',
     PUBLISHED: 'published',
     CANCELLED: 'cancelled'
 } as const;
