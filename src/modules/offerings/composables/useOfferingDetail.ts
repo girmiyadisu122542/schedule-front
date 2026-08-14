@@ -2,16 +2,17 @@ import { ref, reactive, computed } from 'vue';
 import { toast } from 'vue-sonner';
 
 import { useLanguageStore } from '@/stores/languageStore';
+import { useAllowedRoutesStore } from '@/stores/allowedRoutesStore';
 import { useLookupValues, type LookupValueRef } from '@/composables/useLookupValues';
 import { APPROVAL_DECISION, APPROVAL_LOOKUP_TYPE } from '@/modules/offerings/constants/offeringStatus';
 import type { Offering, OfferingApproval } from '@/modules/offerings/types/offering';
 import { getOfferingDetail, recordApproval } from '@/modules/offerings/services/offeringService';
 import { extractFieldErrors, readApiErrorMessage, toFormErrors } from '@/utils/apiError';
 import { MAX_DESCRIPTION_LENGTH } from '@/config/appConfig';
+import type { AllowedAction } from '@/constants/allowedActions';
 
 /** What the approve / reject / request-revision form holds. */
 interface DecisionForm {
-    level_lookup_value_id: number | null;
     decision_lookup_value_id: number | null;
     remark: string;
 }
@@ -23,9 +24,21 @@ interface DecisionForm {
  * NOT a shared composable — each visit loads one offering, and leaving the page
  * should not leave a stale record behind for the next one.
  */
+/**
+ * The permission key each tier requires — mirrors `PERMISSION_BY_APPROVAL_LEVEL`.
+ * Which tier is DUE comes from the server; this only maps a tier to its key.
+ */
+const ACTION_BY_LEVEL: Record<string, AllowedAction> = {
+    committee: 'approveCourseOfferingCommittee',
+    department: 'approveCourseOfferingDepartment',
+    college: 'approveCourseOfferingCollege',
+    registrar: 'approveCourseOfferingRegistrar'
+};
+
 export function useOfferingDetail() {
     const { customizeLanguageData } = useLanguageStore();
 
+    const allowedRoutesStore = useAllowedRoutesStore();
     const levels = useLookupValues(APPROVAL_LOOKUP_TYPE.LEVEL);
     const decisions = useLookupValues(APPROVAL_LOOKUP_TYPE.DECISION);
 
@@ -36,7 +49,6 @@ export function useOfferingDetail() {
     const errors = ref<Record<string, string>>({});
 
     const form = reactive<DecisionForm>({
-        level_lookup_value_id: null,
         decision_lookup_value_id: null,
         remark: ''
     });
@@ -79,6 +91,34 @@ export function useOfferingDetail() {
         decisions.refetch();
     };
 
+    /**
+     * The tier due to decide, named for the reader.
+     *
+     * Resolved from `awaiting_level_code`, which the BACKEND computes from the
+     * status — the frontend never derives it, so there is only one copy of the
+     * chain's ordering.
+     */
+    const awaitingTierLabel = computed(() => {
+        const code = offering.value?.awaiting_level_code;
+        if (!code) return null;
+
+        return levels.options.value.find((value: LookupValueRef) => value.code === code)?.name ?? code;
+    });
+
+    /**
+     * Whether this user holds the key for the tier currently due.
+     *
+     * Reads `awaiting_level_code` — computed by the backend from the status —
+     * and checks only the matching key. The frontend never works out which tier
+     * is due.
+     */
+    const canDecideNow = computed(() => {
+        const code = offering.value?.awaiting_level_code;
+        const action = code ? ACTION_BY_LEVEL[code] : null;
+
+        return !!action && allowedRoutesStore.can(action);
+    });
+
     /** Preselect a decision so the tier buttons act as one-click shortcuts. */
     const chooseDecision = (code: string) => {
         const decision = decisions.options.value.find((value: LookupValueRef) => value.code === code);
@@ -90,13 +130,6 @@ export function useOfferingDetail() {
         errors.value = {};
 
         if (!offering.value) return;
-
-        if (!form.level_lookup_value_id) {
-            errors.value.level_lookup_value_id = customizeLanguageData(
-                'levelIsRequired',
-                'Please choose which tier is acting'
-            );
-        }
 
         if (!form.decision_lookup_value_id) {
             errors.value.decision_lookup_value_id = customizeLanguageData(
@@ -121,7 +154,6 @@ export function useOfferingDetail() {
         isSaving.value = true;
         try {
             const result = await recordApproval(offering.value.id, {
-                level_lookup_value_id: form.level_lookup_value_id as number,
                 decision_lookup_value_id: form.decision_lookup_value_id as number,
                 remark: form.remark.trim() || null
             });
@@ -153,6 +185,8 @@ export function useOfferingDetail() {
         form,
         errors,
         levels,
+        awaitingTierLabel,
+        canDecideNow,
         decisions,
         decisionCode,
         remarkIsRequired,

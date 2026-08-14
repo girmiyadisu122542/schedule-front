@@ -36,6 +36,9 @@ export const offeringSchema = () => {
                         (value) => Number.isInteger(value) && value >= 0 && value <= MAX_SECTION_EXPECTED_STUDENTS,
                         translations.value.invalidExpectedStudents || 'Enter a plausible number of students'
                     ),
+                // The cross-listed cohorts. The OWNING section stays on
+                // `section_id` and is never repeated here.
+                additional_section_ids: z.array(z.number().int().positive()),
                 remark: z
                     .string()
                     .trim()

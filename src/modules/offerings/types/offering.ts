@@ -31,7 +31,17 @@ export interface Offering {
     expected_students: number;
     status_lookup_value_id: number;
     status_code: string | null;
+    /**
+     * The APPROVAL_LEVEL due to decide, or null when nobody is waiting.
+     *
+     * Computed by the backend from the status. The frontend must NOT re-derive
+     * it — a second copy of the state machine here is a second place for it to
+     * drift from the one the service actually enforces.
+     */
+    awaiting_level_code: string | null;
     remark: string | null;
+    total_expected_students?: number;
+    additional_sections?: OfferingSectionRef[];
     status?: LookupValueRef | null;
     semester?: OfferingRef | null;
     course?: OfferingRef | null;
@@ -46,6 +56,24 @@ export interface Offering {
     created_at?: string;
 }
 
+/** A cohort cross-listed onto an offering beyond its owning section. */
+export interface OfferingSectionRef {
+    id: number;
+    section_id: number;
+    expected_students: number | null;
+    section?: OfferingRef | null;
+}
+
+/** Per-queue counts for the list screen's tabs. */
+export interface OfferingSummary {
+    awaiting_me: number;
+    my_drafts: number;
+    in_progress: number;
+    returned: number;
+    approved: number;
+    rejected: number;
+}
+
 /** Form model. The status is absent on purpose — it is never caller-supplied. */
 export interface OfferingForm {
     semester_id: number | null;
@@ -56,6 +84,7 @@ export interface OfferingForm {
     instructor_id: number | null;
     expected_students: string;
     remark: string;
+    additional_section_ids: number[];
 }
 
 export interface PaginatedOfferings {

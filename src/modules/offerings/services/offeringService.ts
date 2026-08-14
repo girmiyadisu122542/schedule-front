@@ -4,6 +4,7 @@ import type {
     Offering,
     OfferingApproval,
     OfferingDetail,
+    OfferingSummary,
     PaginatedOfferings
 } from '@/modules/offerings/types/offering';
 
@@ -18,10 +19,17 @@ export interface OfferingListParams {
     search?: string;
     semester_id?: number;
     course_id?: number;
+    college_id?: number;
     department_id?: number;
+    program_id?: number;
     section_id?: number;
     instructor_id?: number;
     status_code?: string;
+    /**
+     * One of the review queues. Stacks with the filters rather than replacing
+     * them — `awaiting_me` spans four statuses and depends on who is asking.
+     */
+    queue?: string;
 }
 
 /** Body accepted by create / update. The status is never sent. */
@@ -34,6 +42,7 @@ export interface OfferingPayload {
     instructor_id?: number | null;
     expected_students?: number;
     remark?: string | null;
+    additional_section_ids?: number[];
 }
 
 export async function fetchOfferings(params: OfferingListParams = {}): Promise<PaginatedOfferings> {
@@ -62,9 +71,14 @@ export async function getOfferingDetail(key: string | number): Promise<OfferingD
     };
 }
 
-/** What one tier is recording. `remark` is required on reject / revision. */
+/**
+ * What the due tier is recording. `remark` is required on return / reject.
+ *
+ * `level_lookup_value_id` is deliberately absent: the acting tier is computed
+ * server-side from the offering's status. Sending it did not merely duplicate
+ * that — it let a caller claim any tier they liked.
+ */
 export interface ApprovalPayload {
-    level_lookup_value_id: number;
     decision_lookup_value_id: number;
     remark?: string | null;
 }
@@ -109,13 +123,21 @@ export async function submitOffering(id: number): Promise<MutationResult<Offerin
 }
 
 /**
- * Move an offering along COURSE_OFFERING_STATUS. The backend rejects any edge
- * `lookup_transitions` does not declare, with `invalid_status_transition`.
+ * Put a REJECTED offering back in its author's hands.
+ *
+ * Replaces the old generic `change-status`, which accepted any target and wrote
+ * no trail row. This one takes no target at all, so `rejected → draft` is the
+ * only move it can perform.
  */
-export async function changeOfferingStatus(id: number, statusId: number): Promise<MutationResult<Offering>> {
-    const response = await axiosInstance.post(`${BASE}/${id}/change-status`, {
-        status_lookup_value_id: statusId
-    });
+export async function reopenOffering(id: number): Promise<MutationResult<Offering>> {
+    const response = await axiosInstance.post(`${BASE}/${id}/reopen`);
 
     return response.data;
+}
+
+/** Per-queue counts for the tab badges, honouring the caller's scope. */
+export async function fetchOfferingSummary(params: Record<string, unknown> = {}): Promise<OfferingSummary> {
+    const response = await axiosInstance.get(`${BASE}/summary`, { params });
+
+    return response.data.data;
 }
