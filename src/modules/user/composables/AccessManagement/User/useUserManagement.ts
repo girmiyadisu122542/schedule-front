@@ -101,7 +101,7 @@ function userManagementInstance() {
 
         try {
             fetchingUsers.value = true;
-            const response = await axiosInstance.get<UserResponse & { statuses: IdAndName[] }>(`/user/`, {
+            const response = await axiosInstance.get<UserResponse & { statuses: IdAndName[] }>(`/user`, {
                 params: {
                     page: params.page ?? currentPage.value,
                     limit: params.perPage ?? limit.value,
@@ -140,7 +140,7 @@ function userManagementInstance() {
     async function fetchUsersDropDown(): Promise<void> {
         try {
             fetchingUsers.value = true;
-            const response = await axiosInstance.get<UserResponse>(`/user/`, {
+            const response = await axiosInstance.get<UserResponse>(`/user`, {
                 params: {
                     page: currentPage.value,
                     search: searchQuery.value || undefined,

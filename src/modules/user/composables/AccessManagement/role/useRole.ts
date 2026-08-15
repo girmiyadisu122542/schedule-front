@@ -103,7 +103,7 @@ function roleManager() {
     const fetchRoles = async (params: FetchParams = {}) => {
         isLoading.value = true;
         try {
-            const response = await axiosInstance.get('/role/', {
+            const response = await axiosInstance.get('/role', {
                 params: {
                     page: params.page ?? currentPage.value,
                     limit: params.perPage ?? limit.value,

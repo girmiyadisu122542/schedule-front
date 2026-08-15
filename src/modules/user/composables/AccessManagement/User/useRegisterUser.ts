@@ -470,7 +470,7 @@ function registerUserInstance() {
         }
         try {
             isLoading.value = true;
-            const response = await axiosInstance.get(`/user/`, {
+            const response = await axiosInstance.get(`/user`, {
                 params: {
                     id: userId
                 }

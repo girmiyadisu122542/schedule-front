@@ -143,7 +143,7 @@ export function usePermission() {
     const fetchPermissionGroups = async (params: FetchParams = {}) => {
         isLoading.value = true;
         try {
-            const res = await axiosInstance.get('/permission-group/', {
+            const res = await axiosInstance.get('/permission-group', {
                 params: { page: params.page ?? 1, limit: params.perPage ?? 100, search: params.search ?? undefined }
             });
             permissionGroups.value = { data: res.data.data ?? [], pagination: res.data.pagination ?? null };
@@ -160,7 +160,7 @@ export function usePermission() {
     const fetchPermissions = async (params: FetchParams = {}) => {
         isLoading.value = true;
         try {
-            const res = await axiosInstance.get('/permission/', {
+            const res = await axiosInstance.get('/permission', {
                 params: {
                     page: params.page ?? currentPage.value,
                     limit: params.perPage ?? limit.value,
