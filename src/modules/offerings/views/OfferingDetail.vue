@@ -33,6 +33,8 @@ const {
     form,
     errors,
     levels,
+    awaitingTierLabel,
+    canDecideNow,
     decisions,
     remarkIsRequired,
     load,
@@ -135,7 +137,7 @@ onMounted(() => {
 
             <!-- ---- record a decision ---- -->
             <section
-                v-if="canAct && ($can('approveCourseOffering') || $can('rejectCourseOffering'))"
+                v-if="canAct && (canDecideNow || $can('rejectCourseOffering'))"
                 class="schedule-card border-border-default space-y-4 rounded-2xl border p-6">
                 <h2 class="text-text-primary text-base font-semibold">
                     {{ $lang.recordDecision || 'Record a decision' }}
@@ -143,7 +145,7 @@ onMounted(() => {
 
                 <div class="flex flex-wrap gap-2">
                     <MainButton
-                        v-if="$can('approveCourseOffering')"
+                        v-if="canDecideNow"
                         severity="primary"
                         :label="$lang.approveOffering || 'Approve'"
                         @click="chooseDecision(APPROVAL_DECISION.APPROVED)" />
@@ -160,19 +162,16 @@ onMounted(() => {
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <MainSelect
-                        v-model="form.level_lookup_value_id"
-                        :label-text="$lang.approvalLevel || 'Acting as'"
-                        :options="levels.options.value"
-                        option-label="name"
-                        option-value="id"
-                        :placeholder="$lang.selectApprovalLevel || 'Which tier are you?'"
-                        :invalid="!!errors.level_lookup_value_id"
-                        :message="errors.level_lookup_value_id"
-                        message-type="error"
-                        size="normal"
-                        is-required
-                        :loading="levels.loading.value" />
+                    <!-- No tier picker. The acting tier is a function of the
+                         offering's status and is computed server-side — when the
+                         caller could name their own, a department head could
+                         sign as the registrar. -->
+                    <div class="border-border-default bg-surface-subtle rounded-lg border px-3 py-2">
+                        <span class="text-text-tertiary block text-xs">{{ $lang.actingAs || 'Acting as' }}</span>
+                        <span class="text-text-primary text-sm font-medium">
+                            {{ awaitingTierLabel || $lang.noDecisionDue || 'No decision is due' }}
+                        </span>
+                    </div>
                     <MainSelect
                         v-model="form.decision_lookup_value_id"
                         :label-text="$lang.decision || 'Decision'"

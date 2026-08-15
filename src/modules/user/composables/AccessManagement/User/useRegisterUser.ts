@@ -41,7 +41,7 @@ import type {
     UserPermissionOverride,
     Role
 } from '@/modules/user/types/AccessManagement/User/UserType';
-import { ACTIVATE, DEACTIVATE, DELETE } from '@/modules/user/constants/fixedValues';
+import { ACTIVATE, DEACTIVATE, DELETE, REQUIRED_USER_FIELDS } from '@/modules/user/constants/fixedValues';
 
 import EyeIcon from '@/assets/icons/EyeIcon.vue';
 import EditIcon from '@/assets/icons/EditIcon.vue';
@@ -297,6 +297,14 @@ function registerUserInstance() {
 
         if (error) {
             errors.value = error;
+
+            // Without this the button is silent: the only feedback is an inline
+            // message on one field, which is off-screen whenever the form is
+            // scrolled, so the click reads as "nothing happened".
+            toast.error(
+                customizeLanguageData('pleaseFixHighlightedFields', 'Please correct the highlighted fields and retry')
+            );
+
             return false;
         }
 
@@ -332,8 +340,16 @@ function registerUserInstance() {
 
                 const rawValue = toRaw(value);
 
+                // multipart/form-data has no null, so an untouched optional
+                // input would otherwise arrive as the empty string — which the
+                // server reads as "a value was given" and validates as one. An
+                // empty national_id failed `digits:16` that way and made the
+                // user impossible to create. Omitting the key sends "absent".
+                if (typeof rawValue === 'string' && rawValue.trim() === '' && !REQUIRED_USER_FIELDS.includes(key)) {
+                    return;
+                }
+
                 if (rawValue instanceof File || rawValue instanceof Blob) {
-                    console.log('Appending File:', rawValue);
                     formData.append(key, rawValue);
                 } else if (typeof rawValue === TYPE_OBJECT) {
                     appendFormData(formData, key, rawValue);
@@ -395,13 +411,23 @@ function registerUserInstance() {
         const error = validateFormWithZod<userFormField>(useUserSchema.value, userForm.value);
         if (error) {
             userErrors.value = error;
+
+            // Same reason as handleSubmit: without a toast the click looks
+            // ignored whenever the offending field is scrolled out of view.
+            toast.error(
+                customizeLanguageData('pleaseFixHighlightedFields', 'Please correct the highlighted fields and retry')
+            );
+
             return;
         }
 
         isLoading.value = true;
+        let saved = false;
+
         try {
             const response = await axiosInstance.post('/user/create-new', userForm.value);
             users.value?.data.unshift(response.data.data);
+            saved = true;
             toast.success(
                 response.data.message ||
                     customizeLanguageData('userRegisteredSuccessfully', 'User registered successfully')
@@ -418,7 +444,11 @@ function registerUserInstance() {
             isLoading.value = false;
         }
 
-        if (shouldCloseMiniUserModal()) {
+        // Closed on an actual save, not on "no field errors were returned". A
+        // 500 or a dropped connection leaves the error bag empty, so the old
+        // check closed the dialog and wiped the form as though it had worked —
+        // the user's typing was lost and no account existed.
+        if (saved) {
             showRegisterModal.value = false;
             resetUserForm();
         }
@@ -654,14 +684,6 @@ function registerUserInstance() {
             }
         };
     };
-
-    function shouldCloseMiniUserModal() {
-        return !userErrors.value || Object.keys(userErrors.value).length === 0;
-    }
-
-    function shouldCloseModal() {
-        return !errors.value || Object.keys(errors.value).length === 0;
-    }
 
     const handleUserUpdate = (user: User) => {
         if (user.first_name !== undefined) form.value.first_name = user.first_name;
@@ -901,7 +923,6 @@ function registerUserInstance() {
         handlePhotoFileUpdate,
         handleUserDetailUpdate,
         handleVerifyNationalId,
-        shouldCloseMiniUserModal,
 
         permissionOverridesForm,
         showDeleteConfirmModal,
@@ -935,7 +956,6 @@ function registerUserInstance() {
         handleAddUser,
         openUserFullDetail,
         getBulkActions,
-        shouldCloseModal,
         handleFormSubmit,
         getActionOptions,
         fetchUserForEdit,

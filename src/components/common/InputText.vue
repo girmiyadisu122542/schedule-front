@@ -85,7 +85,14 @@ const actionState = ref<ActionState>('idle');
 
 /* ---------------- COMPUTED ---------------- */
 
-const hasPrefix = computed(() => props.type === 'tel' || !!slots.prefix);
+/**
+ * The dial-code picker only earns its space when there are countries to pick.
+ * This app ships no country catalogue (`useCommonData.fetchCountries` is a
+ * no-op), so an unconditional `type="tel"` rendered a 🌍 button with a blank
+ * dial code over an empty dropdown, and reserved `pl-20` for it.
+ */
+const hasCountryPicker = computed(() => props.type === 'tel' && !!props.countries?.length);
+const hasPrefix = computed(() => hasCountryPicker.value || !!slots.prefix);
 const hasSuffix = computed(() => !!slots.suffix || props.actionHandler || clearable.value || props.type === 'color');
 
 const iconPos = computed<IconPosition>(() => iconPosition.value || 'left');
@@ -342,7 +349,7 @@ onUnmounted(() => {
         <div class="relative">
             <!-- TEL PREFIX -->
             <div
-                v-if="type === 'tel'"
+                v-if="hasCountryPicker"
                 class="absolute inset-y-0 left-0 flex items-center pl-2">
                 <div
                     ref="triggerRef"
@@ -402,10 +409,17 @@ onUnmounted(() => {
                     'py-6',
                     props.disabled ? 'cursor-not-allowed bg-gray-100 opacity-60 dark:bg-gray-800' : ''
                 ]" />
+            <!--
+                Carries the placeholder like every other branch. Without a
+                country picker there is no dial-code prefix to imply the
+                expected shape, so the hint is the only thing telling the user
+                what a valid number looks like.
+            -->
             <input
                 v-else
                 type="tel"
                 :value="getTelNumberPart"
+                :placeholder="placeholder"
                 :disabled="props.disabled"
                 @input="onTelInput"
                 :class="[

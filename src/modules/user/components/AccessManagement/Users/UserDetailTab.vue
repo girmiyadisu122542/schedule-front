@@ -13,7 +13,7 @@ import ImageFileUpload from '@/components/common/ImageFileUpload.vue';
 import { useUserForm } from '@/modules/user/composables/AccessManagement/User/useUserForm';
 import type { User, UserDetail } from '@/modules/user/types/AccessManagement/User/UserType';
 import { useRegisterUser } from '@/modules/user/composables/AccessManagement/User/useRegisterUser';
-import { DEFAULT_COUNTRY_CODE } from '@/config/appConfig';
+import { DEFAULT_COUNTRY_CODE, EXAMPLE_PHONE_NUMBER } from '@/config/appConfig';
 
 const props = defineProps<{
     user: User;
@@ -53,7 +53,7 @@ const { countries } = useCommonData();
 
             <div class="mb-8">
                 <InputText
-                    :labelText="$lang.nationalId || 'National ID'"
+                    :labelText="$lang.nationalIdOptional || 'National ID (Optional)'"
                     v-model="userDetailForm.national_id"
                     :invalid="!!props.errors?.national_id"
                     :message="props.errors?.national_id || ''"
@@ -110,6 +110,7 @@ const { countries } = useCommonData();
                     <InputText
                         :labelText="$lang.phone || 'Phone'"
                         type="tel"
+                        :placeholder="EXAMPLE_PHONE_NUMBER"
                         v-model="userForm.phone"
                         :invalid="!!props.errors?.phone"
                         :message="props.errors?.phone || ''"

@@ -2,7 +2,7 @@
 import InputText from '@/components/common/InputText.vue';
 import MainSelect from '@/components/common/MainSelect.vue';
 
-import { DEFAULT_COUNTRY_CODE } from '@/config/appConfig';
+import { DEFAULT_COUNTRY_CODE, EXAMPLE_PHONE_NUMBER } from '@/config/appConfig';
 
 import { useCommonData } from '@/composables/common/useCommonData';
 import { useRegisterUser } from '@/modules/user/composables/AccessManagement/User/useRegisterUser';
@@ -43,11 +43,16 @@ const { countries } = useCommonData();
             messageType="error"
             @input="clearError('last_name')" />
 
+        <!--
+            Rendered unconditionally. It used to be `v-if="countries.length > 0"`,
+            and this app has no country catalogue, so the field never appeared
+            while the schema still required a phone — the form could not be
+            saved and there was no visible field to correct.
+        -->
         <InputText
-            v-if="countries.length > 0"
             type="tel"
             :labelText="$lang.phone || 'Phone'"
-            :placeholder="$lang.phonePlaceholder || 'Enter Phone Number'"
+            :placeholder="EXAMPLE_PHONE_NUMBER"
             is-required
             v-model="userForm.phone"
             :invalid="!!userErrors?.phone"

@@ -3,9 +3,11 @@ import { ref, watch } from 'vue';
 import { defineStore, storeToRefs } from 'pinia';
 
 import Cookies from 'js-cookie';
+import { toast } from 'vue-sonner';
 import axiosInstance from '@/api/axiosInstance';
 
 import { ACCESS_TOKEN_KEY } from '@/config/appConfig';
+import { HTTP_UNAUTHORIZED } from '@/constants/httpStatus';
 import type { UserProfile } from '@/modules/user/types/UserProfile/userProfile';
 import { useLanguageStore } from '@/stores/languageStore';
 
@@ -23,7 +25,9 @@ export const useAuthStore = defineStore(
         const token = ref(Cookies.get(ACCESS_TOKEN_KEY) || null);
         const loadingUser = ref(false);
         const isInitialized = ref(false);
-        const { translations } = storeToRefs(useLanguageStore());
+        const languageStore = useLanguageStore();
+        const { translations } = storeToRefs(languageStore);
+        const { customizeLanguageData } = languageStore;
 
         const rememberMe = ref<boolean>(false);
 
@@ -56,8 +60,20 @@ export const useAuthStore = defineStore(
                 });
                 user.value = response.data.data;
                 isInitialized.value = true;
-            } catch (error) {
-                logout();
+            } catch (error: any) {
+                // Only a rejected session is a reason to sign out. This used to
+                // log out on ANY failure, so a 403, a 500 or a dropped network
+                // connection all looked identical to an expired token and threw
+                // the user back to the login screen.
+                if (error?.response?.status === HTTP_UNAUTHORIZED) {
+                    logout();
+                    return;
+                }
+
+                toast.error(
+                    error?.response?.data?.message ||
+                        customizeLanguageData('unableToLoadProfile', 'Unable to load your profile. Please retry.')
+                );
             } finally {
                 loadingUser.value = false;
             }

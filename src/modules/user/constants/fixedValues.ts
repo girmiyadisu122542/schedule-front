@@ -212,6 +212,16 @@ export const USER_MENU_LABEL_USER_PROFILE = 'User Profile';
 export const USER_MENU_LABEL_UPGRADE = 'Upgrade Subscription';
 export const USER_MENU_LABEL_CLIPBOARD_UNAVAILABLE = 'Clipboard unavailable';
 
+/**
+ * Fields `CreateUserRequest` marks `required`.
+ *
+ * Everything else is omitted from the multipart body when it is blank, so the
+ * server sees an absent optional field rather than an empty string it has to
+ * validate. These stay in the payload even when empty so the server answers
+ * with its own "required" message instead of silently accepting nothing.
+ */
+export const REQUIRED_USER_FIELDS = ['first_name', 'middle_name', 'last_name', 'email', 'phone', 'gender'];
+
 export const ZERO = 0;
 export const ONE = 1;
 export const TWO = 2;
@@ -228,5 +238,5 @@ export const HEX_LENGTH = 16;
 export const DEFAULT_RGB_COLOR_VALUE = {
     r: 59,
     g: 130,
-    b: 246,
+    b: 246
 };

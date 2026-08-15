@@ -134,6 +134,19 @@ export const REGIONAL_INDICATOR_OFFSET = 127397;
 export const PHONE_TRUNK_PREFIX = '0';
 export const FALLBACK_COUNTRY_ICON = '🌍';
 
+/**
+ * User-form validation limits, mirroring the backend.
+ *
+ * These MUST match `Helper\Validation\Phone::ETHIOPIAN_PATTERN` and
+ * `NATIONAL_ID_LENGTH` in `helper/AppConfig.php`. Where the two drifted, the
+ * form rejected what the API accepts (a user with no national ID) and accepted
+ * what the API rejects (any phone at all), so the Create button either did
+ * nothing or failed on the server for a reason the field never showed.
+ */
+export const NATIONAL_ID_LENGTH = 16;
+export const ETHIOPIAN_PHONE_PATTERN = /^(?:\+251|251|0)(9|7)\d{8}$/;
+export const EXAMPLE_PHONE_NUMBER = '0912345678';
+
 export const OTP_TYPES = {
     REGISTER: OTP_TYPE_REGISTER,
     RESET: OTP_TYPE_RESET
