@@ -68,7 +68,9 @@ const {
     getActionOptions,
     openUserFullDetail,
     handleUserFormSubmit,
-    resetUserForm
+    resetUserForm,
+    // Aliased because useUserManagement exposes an `isLoading` of its own.
+    isLoading: isSavingUser
 } = useRegisterUser();
 
 const openRegisterModal = () => {
@@ -225,9 +227,15 @@ onMounted(() => {
                     :icon="ExpandIcon"
                     :label="$lang.exapndFullForm || 'Expand Full Form'"
                     @click="handleAddUser" />
+                <!--
+                    Bound to the form's OWN submit state. This used to read
+                    `fetchingUsers`, the users table's fetch flag, so Save was
+                    disabled whenever the list happened to be reloading and gave
+                    no feedback at all while the user was actually being saved.
+                -->
                 <MainButton
                     :label="$lang.save || 'Save'"
-                    :loading="fetchingUsers"
+                    :loading="isSavingUser"
                     @click="handleUserFormSubmit" />
             </div>
         </template>
