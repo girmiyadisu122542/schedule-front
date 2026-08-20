@@ -1,4 +1,5 @@
 import { ref, computed, watch } from 'vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 import { toast } from 'vue-sonner';
 import { createSharedComposable } from '@vueuse/core';
 
@@ -77,9 +78,9 @@ function timetableManager() {
             tooltip: session.course_offering?.name ?? undefined,
             courseCode: session.course_offering?.course_code ?? undefined,
             courseTitle: session.course_offering?.course_title ?? undefined,
-            subtitle:
-                [session.room?.name, session.instructor?.name].filter(Boolean).join(' · ') ||
-                customizeLanguageData('noRoom', 'No room'),
+            // Always leads with the room, so an unplaced session reads
+            // "NRA · Dr Alemu" rather than hiding that it has nowhere to go.
+            subtitle: [roomLabel(session.room), session.instructor?.name].filter(Boolean).join(' · '),
             badge: session.session_type?.name ?? undefined,
             start: session.start_time,
             end: session.end_time,

@@ -27,13 +27,12 @@ const emit = defineEmits<{
 }>();
 
 const departmentDropdown = useDropdownOptions<DropdownOption>('/departments', { [DROPDOWN_PARAM_KEY]: true });
-const userDropdown = useDropdownOptions<DropdownOption>('/user', { [DROPDOWN_PARAM_KEY]: true });
 const academicRanks = useLookupValues(LOOKUP_TYPE.ACADEMIC_RANK);
 
 onMounted(() => {
     departmentDropdown.fetchOptions();
-    userDropdown.fetchOptions();
 });
+
 </script>
 
 <template>
@@ -97,13 +96,16 @@ onMounted(() => {
                         show-refresh
                         :loading="academicRanks.loading.value"
                         @refresh="academicRanks.refetch(true)" />
+                    <!-- Required: this becomes the instructor's login, and the
+                         only address their one-time password is sent to. -->
                     <InputText
                         v-model="form.email"
                         :label="$lang.email || 'Email'"
-                        :placeholder="$lang.enterEmail || 'Optional'"
+                        :placeholder="$lang.enterEmail || 'e.g. alemu.bekele@school.edu'"
                         :invalid="!!errors.email"
                         :message="errors.email"
                         message-type="error"
+                        is-required
                         size="normal" />
                     <InputText
                         v-model="form.phone"
@@ -115,30 +117,12 @@ onMounted(() => {
                         size="normal" />
                 </div>
 
-                <!--
-                    The person's login, not the record's creator: the registry
-                    precedes the account, so most instructors have none.
-                -->
-                <MainSelect
-                    v-model="form.user_id"
-                    :label-text="$lang.portalAccount || 'Portal account (optional)'"
-                    :options="userDropdown.options.value"
-                    option-label="full_name"
-                    option-value="id"
-                    :placeholder="$lang.selectPortalAccount || 'Link a login account'"
-                    :invalid="!!errors.user_id"
-                    :message="errors.user_id"
-                    message-type="error"
-                    size="normal"
-                    search
-                    show-clear
-                    show-refresh
-                    :loading="userDropdown.loading.value"
-                    :helper-message="
-                        $lang.portalAccountHint ||
-                        'Identifies who this instructor is. One account can be linked to one instructor.'
-                    "
-                    @refresh="userDropdown.fetchOptions(true)" />
+                <p class="text-text-tertiary text-xs">
+                    {{
+                        $lang.instructorAccountHint ||
+                        'A portal account is created automatically from the email above, and the login details are sent to it.'
+                    }}
+                </p>
             </section>
 
             <section class="border-border-subtle space-y-4 border-t pt-6">

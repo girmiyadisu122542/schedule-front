@@ -4,6 +4,8 @@ import { RouterLink } from 'vue-router';
 
 import { useLanguageStore } from '@/stores/languageStore';
 import { useReports, type ReportTab } from '@/modules/reports/composables/useReports';
+import { useClientTable } from '@/composables/useClientTable';
+import ClientTableControls from '@/components/common/ClientTableControls.vue';
 import type { DropdownOption } from '@/types/CommonTypes';
 
 import Badge from '@/components/common/Badge.vue';
@@ -14,7 +16,13 @@ import Skeleton from '@/components/common/Skeleton.vue';
 import PlacementSuggestions from '@/modules/scheduling/components/PlacementSuggestions.vue';
 import FileText from '@/assets/icons/FileText.vue';
 
-import { STATUS_DANGER, STATUS_LIGHT, STATUS_WARNING } from '@/config/appConfig';
+import {
+    EXPORT_FORMAT_CSV,
+    EXPORT_FORMAT_XLSX,
+    STATUS_DANGER,
+    STATUS_LIGHT,
+    STATUS_WARNING
+} from '@/config/appConfig';
 
 /**
  * Reporting: exceptions, room utilisation, instructor workload, and a
@@ -40,8 +48,30 @@ const {
     exceptionGroups,
     semesterDropdown,
     selectTab,
-    reload
+    reload,
+    isExporting,
+    canExport,
+    exportReport
 } = useReports();
+
+/**
+ * Room utilisation and instructor workload are the two reports that grow with
+ * the institution — every room, every teacher. Rendered whole they were a
+ * thousand-row table with no way to find anything in it, so both are searched,
+ * sorted and paged in the browser. The data is already loaded; only the DOM is
+ * limited.
+ */
+const roomTable = useClientTable(
+    () => rooms.value?.rows ?? [],
+    ['room_code', 'room_name', 'building', 'campus'],
+    { key: 'hours_per_week' }
+);
+
+const workloadTable = useClientTable(
+    () => workload.value?.rows ?? [],
+    ['employee_no', 'name', 'department'],
+    { key: 'teaching_hours' }
+);
 
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('reports', 'Reports') }]);
 
@@ -106,6 +136,23 @@ onMounted(async () => {
                     :loading="isLoading"
                     :disabled="!hasSemester"
                     @click="reload" />
+                <!--
+                    Hidden rather than disabled on the compare tab: that report
+                    is a paired diff, not a row list, so there is nothing a
+                    spreadsheet of it would be good for.
+                -->
+                <MainButton
+                    v-if="canExport"
+                    :label="$lang.exportXlsx || 'Export Excel'"
+                    severity="primary"
+                    :loading="isExporting"
+                    @click="exportReport(EXPORT_FORMAT_XLSX)" />
+                <MainButton
+                    v-if="canExport"
+                    outlined
+                    :label="$lang.exportCsv || 'Export CSV'"
+                    :loading="isExporting"
+                    @click="exportReport(EXPORT_FORMAT_CSV)" />
             </div>
         </div>
 
@@ -306,6 +353,16 @@ onMounted(async () => {
                 </div>
             </div>
 
+            <ClientTableControls
+                v-model:search="roomTable.search.value"
+                v-model:per-page="roomTable.perPage.value"
+                v-model:page="roomTable.page.value"
+                :page-count="roomTable.pageCount.value"
+                :total="roomTable.total.value"
+                :range-start="roomTable.rangeStart.value"
+                :range-end="roomTable.rangeEnd.value"
+                :search-placeholder="$lang.searchRooms || 'Search by room, building or campus…'" />
+
             <div class="border-border-default overflow-x-auto rounded-2xl border">
                 <table class="w-full min-w-[720px] text-sm">
                     <thead class="bg-surface-subtle text-text-tertiary">
@@ -324,7 +381,7 @@ onMounted(async () => {
                     </thead>
                     <tbody class="divide-border-subtle divide-y">
                         <tr
-                            v-for="row in rooms.rows"
+                            v-for="row in roomTable.visible.value"
                             :key="row.room_id">
                             <td class="text-text-primary px-4 py-2.5 font-medium">{{ row.room_code }}</td>
                             <td class="text-text-secondary px-4 py-2.5">{{ row.building || '—' }}</td>
@@ -386,6 +443,16 @@ onMounted(async () => {
                 </div>
             </div>
 
+            <ClientTableControls
+                v-model:search="workloadTable.search.value"
+                v-model:per-page="workloadTable.perPage.value"
+                v-model:page="workloadTable.page.value"
+                :page-count="workloadTable.pageCount.value"
+                :total="workloadTable.total.value"
+                :range-start="workloadTable.rangeStart.value"
+                :range-end="workloadTable.rangeEnd.value"
+                :search-placeholder="$lang.searchInstructors || 'Search by name, employee number or department…'" />
+
             <div class="border-border-default overflow-x-auto rounded-2xl border">
                 <table class="w-full min-w-[720px] text-sm">
                     <thead class="bg-surface-subtle text-text-tertiary">
@@ -404,7 +471,7 @@ onMounted(async () => {
                     </thead>
                     <tbody class="divide-border-subtle divide-y">
                         <tr
-                            v-for="row in workload.rows"
+                            v-for="row in workloadTable.visible.value"
                             :key="row.instructor_id">
                             <td class="px-4 py-2.5">
                                 <span class="text-text-primary block font-medium">{{ row.name }}</span>

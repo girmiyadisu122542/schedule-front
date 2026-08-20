@@ -24,6 +24,7 @@ const {
     filterFields,
     dialogVisible,
     isEditingDialog,
+    editingId,
     editForm,
     editErrors,
     isSavingEdit,
@@ -135,6 +136,7 @@ onMounted(() => {
             v-model:visible="dialogVisible"
             :is-editing="isEditingDialog"
             :is-saving="isSavingEdit"
+            :department-id="editingId"
             :form="editForm"
             :errors="editErrors"
             @save="saveDepartmentForm" />

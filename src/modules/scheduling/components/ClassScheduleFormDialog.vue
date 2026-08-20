@@ -14,7 +14,7 @@ import { DROPDOWN_PARAM_KEY } from '@/config/appConfig';
 import type { ClassScheduleForm } from '@/modules/scheduling/types/classSchedule';
 import type { DropdownOption } from '@/types/CommonTypes';
 
-defineProps<{
+const props = defineProps<{
     visible: boolean;
     isEditing: boolean;
     isSaving: boolean;
@@ -49,6 +49,27 @@ onMounted(() => {
     sessionTypes.refetch();
     schedulingConstants.load();
 });
+
+/**
+ * A blank day/time row.
+ *
+ * Seeded from the last row's END time, because the common case is a second
+ * session later the same week and retyping "09:30" every time is friction the
+ * form can absorb.
+ */
+function addSlot() {
+    const previous = props.form.slots[props.form.slots.length - 1];
+
+    props.form.slots.push({
+        day_of_week: null,
+        start_time: previous?.end_time ?? '',
+        end_time: ''
+    });
+}
+
+function removeSlot(index: number) {
+    props.form.slots.splice(index, 1);
+}
 </script>
 
 <template>
@@ -113,36 +134,68 @@ onMounted(() => {
                     {{ $lang.whenAndWhere || 'When And Where' }}
                 </h3>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <!--
+                    A course meets more than once a week, so CREATE collects
+                    every day and time at once. Editing stays single: an edit
+                    moves one existing meeting, and offering to add rows there
+                    would blur "change this" with "add more".
+                -->
+                <p
+                    v-if="!isEditing"
+                    class="text-text-tertiary text-xs">
+                    {{
+                        $lang.multipleSlotsHint ||
+                        'Add every day and time this course meets. They share the room and instructor below unless you set one per session.'
+                    }}
+                </p>
+
+                <div
+                    v-for="(slot, index) in form.slots"
+                    :key="index"
+                    class="grid grid-cols-1 items-start gap-4 sm:grid-cols-[1fr_1fr_1fr_auto]">
                     <MainSelect
-                        v-model="form.day_of_week"
+                        v-model="slot.day_of_week"
                         :label-text="$lang.dayOfWeek || 'Day'"
                         :options="schedulingConstants.dayOptions.value"
                         option-label="name"
                         option-value="id"
                         :placeholder="$lang.selectDay || 'Select a day'"
-                        :invalid="!!errors.day_of_week"
-                        :message="errors.day_of_week"
+                        :invalid="!!errors[`slots.${index}.day_of_week`]"
+                        :message="errors[`slots.${index}.day_of_week`]"
                         message-type="error"
                         size="normal"
                         is-required />
                     <TimePickerField
-                        v-model="form.start_time"
+                        v-model="slot.start_time"
                         use24h
                         :minute-step="5"
                         :label="$lang.startTime || 'Start time'"
                         :placeholder="$lang.selectStartTime || '08:00'"
-                        :invalid="!!errors.start_time"
-                        :message="errors.start_time" />
+                        :invalid="!!errors[`slots.${index}.start_time`]"
+                        :message="errors[`slots.${index}.start_time`]" />
                     <TimePickerField
-                        v-model="form.end_time"
+                        v-model="slot.end_time"
                         use24h
                         :minute-step="5"
                         :label="$lang.endTime || 'End time'"
                         :placeholder="$lang.selectEndTime || '09:30'"
-                        :invalid="!!errors.end_time"
-                        :message="errors.end_time" />
+                        :invalid="!!errors[`slots.${index}.end_time`]"
+                        :message="errors[`slots.${index}.end_time`]" />
+                    <!-- Never removable down to nothing: one slot IS the form. -->
+                    <MainButton
+                        v-if="!isEditing && form.slots.length > 1"
+                        outlined
+                        severity="danger"
+                        class="mt-6"
+                        :label="$lang.remove || 'Remove'"
+                        @click="removeSlot(index)" />
                 </div>
+
+                <MainButton
+                    v-if="!isEditing"
+                    outlined
+                    :label="$lang.addAnotherSession || 'Add another session'"
+                    @click="addSlot" />
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <MainSelect

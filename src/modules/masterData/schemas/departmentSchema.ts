@@ -36,7 +36,11 @@ export const departmentSchema = () => {
                 .positive(translations.value.collegeIsRequired || 'Please choose a college'),
             // Routing pointer for the department-approval step — optional.
             head_user_id: z.number().int().positive().nullable(),
-            is_active: z.boolean()
+            is_active: z.boolean(),
+            // Optional by design: a department with no rooms still schedules,
+            // its classes simply carry the course and the time with the room
+            // left for a coordinator to fill in.
+            room_ids: z.array(z.number().int().positive())
         })
     );
 };

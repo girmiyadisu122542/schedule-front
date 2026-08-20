@@ -22,6 +22,8 @@ export interface DepartmentPayload {
     college_id: number;
     head_user_id?: number | null;
     is_active?: boolean;
+    /** The department's rooms, sent whole. An empty array releases them all. */
+    room_ids?: number[];
 }
 
 export async function fetchDepartments(params: DepartmentListParams = {}): Promise<PaginatedDepartments> {

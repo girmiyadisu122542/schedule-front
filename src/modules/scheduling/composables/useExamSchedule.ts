@@ -1,3 +1,5 @@
+import type { BulkResultFailure } from '@/components/common/BulkResultDialog.vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { createSharedComposable } from '@vueuse/core';
@@ -25,6 +27,7 @@ import {
     deleteExamSchedule,
     confirmExamSchedule,
     publishExamSchedule,
+    bulkExamScheduleAction,
     cancelExamSchedule,
     pinExamSchedule,
     type ExamScheduleListParams,
@@ -374,7 +377,7 @@ function examScheduleManager() {
             courseTitle: exam.course_offering?.course_title ?? undefined,
             invigilators: exam.invigilators ?? undefined,
             subtitle: [
-                exam.room?.name || customizeLanguageData('noRoom', 'No hall'),
+                roomLabel(exam.room),
                 `${exam.required_invigilators} ${customizeLanguageData('invigilators', 'Invigilators')}`
             ].join(' · '),
             badge: exam.exam_type?.name || exam.exam_type_code || undefined,
@@ -426,8 +429,62 @@ function examScheduleManager() {
         return semesterId ? { semester_id: semesterId } : {};
     };
 
+    // ---- bulk lifecycle decisions ------------------------------------------
+
+    const isBulkRunning = ref(false);
+    const bulkResultVisible = ref(false);
+    const bulkResult = ref<{ succeeded: number; failed: BulkResultFailure[] }>({ succeeded: 0, failed: [] });
+
+    /**
+     * Apply one decision to every selected row.
+     *
+     * Not filtered by what the selection can accept: the server decides that
+     * per row and returns what it refused, so duplicating the lifecycle rules
+     * here would only give them a second place to drift from.
+     *
+     * A partly-successful run is normal — the refusals are surfaced by name,
+     * because "2 failed" leaves the operator hunting for which two.
+     */
+    const runBulkAction = async (
+        rows: ExamSchedule[],
+        action: 'publish' | 'confirm' | 'cancel' | 'delete'
+    ) => {
+        if (!rows.length) return;
+
+        isBulkRunning.value = true;
+        try {
+            const response = await bulkExamScheduleAction({
+                action,
+                schedule_ids: rows.map((row) => row.id)
+            });
+
+            const failed = response.data?.failed ?? [];
+
+            // The toast carries the COUNT only. The detail — one long row label
+            // plus a reason, per refusal — is unreadable crammed into a toast
+            // that vanishes, so it goes to a dialog the reader can dwell on.
+            if (failed.length) {
+                bulkResult.value = { succeeded: response.data?.succeeded ?? 0, failed };
+                bulkResultVisible.value = true;
+                toast.warning(response.message);
+            } else {
+                toast.success(response.message);
+            }
+
+            await resource.fetchItems();
+        } catch (error: unknown) {
+            toast.error(genericError(error));
+        } finally {
+            isBulkRunning.value = false;
+        }
+    };
+
     return {
         ...resource,
+        isBulkRunning,
+        bulkResultVisible,
+        bulkResult,
+        runBulkAction,
         exams: resource.items,
         fetchExams: resource.fetchItems,
         calendarEvents,

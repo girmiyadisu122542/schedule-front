@@ -1,4 +1,5 @@
 import { ref, computed, watch } from 'vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 import { toast } from 'vue-sonner';
 import { createSharedComposable } from '@vueuse/core';
 
@@ -72,7 +73,7 @@ function examCalendarManager() {
             courseTitle: sitting.course_offering?.course_title ?? undefined,
             invigilators: sitting.invigilators ?? undefined,
             subtitle: [
-                sitting.room?.name || customizeLanguageData('noRoom', 'No hall'),
+                roomLabel(sitting.room),
                 `${sitting.required_invigilators} ${customizeLanguageData('invigilators', 'Invigilators')}`
             ].join(' · '),
             badge: sitting.exam_type?.name || sitting.exam_type_code || undefined,

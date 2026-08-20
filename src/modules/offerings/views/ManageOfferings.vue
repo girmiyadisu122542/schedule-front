@@ -20,6 +20,7 @@ import DecisionDialog from '@/modules/offerings/components/DecisionDialog.vue';
 import OfferingBoard from '@/modules/offerings/components/OfferingBoard.vue';
 import OfferingViewToggle from '@/modules/offerings/components/OfferingViewToggle.vue';
 import MainTable from '@/components/common/MainTable.vue';
+import BulkResultDialog from '@/components/common/BulkResultDialog.vue';
 import StatusBadge from '@/components/common/StatusBadge.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 
@@ -29,6 +30,9 @@ import ImportIcon from '@/assets/icons/ImportIcon.vue';
 
 import type { Offering } from '@/modules/offerings/types/offering';
 import { OFFERING_VIEW } from '@/modules/offerings/constants/offeringView';
+import { APPROVAL_DECISION } from '@/modules/offerings/constants/offeringStatus';
+import type { BulkAction } from '@/components/common/MainTable.vue';
+import { COMPONENT_SIZE } from '@/config/appConfig';
 import router from '@/router';
 
 const { customizeLanguageData } = useLanguageStore();
@@ -69,6 +73,9 @@ const {
     decisionTarget,
     decisionCode,
     decisionRemark,
+    runBulkAction,
+    bulkResultVisible,
+    bulkResult,
     isDeciding,
     openDecision,
     closeDecision,
@@ -100,6 +107,38 @@ const {
 const breadcrumbItems = computed(() => [{ label: customizeLanguageData('courseOfferings', 'Course Offerings') }]);
 
 const isEmpty = computed(() => !isLoading.value && offerings.value.data.length === 0);
+
+/**
+ * Bulk decisions on the selected offerings.
+ *
+ * Deliberately NOT filtered by what the current selection can accept: the
+ * server decides that per row, at each offering's own approval tier, and says
+ * which it refused. Greying actions out here would only duplicate that rule in
+ * a second place — where it could drift.
+ */
+const bulkActions = computed<BulkAction[]>(() => [
+    {
+        label: customizeLanguageData('decide', 'Decision'),
+        options: [
+            { label: customizeLanguageData('approve', 'Approve'), value: APPROVAL_DECISION.APPROVED, size: COMPONENT_SIZE.SM },
+            { label: customizeLanguageData('reject', 'Reject'), value: APPROVAL_DECISION.REJECTED, size: COMPONENT_SIZE.SM },
+            {
+                label: customizeLanguageData('requestRevision', 'Return for revision'),
+                value: APPROVAL_DECISION.REVISION_REQUESTED,
+                size: COMPONENT_SIZE.SM
+            }
+        ],
+        onClick: (rows, decision?: string) => runBulkAction(rows as Offering[], 'approve', decision)
+    },
+    {
+        label: customizeLanguageData('submit', 'Submit'),
+        onClick: (rows) => runBulkAction(rows as Offering[], 'submit')
+    },
+    {
+        label: customizeLanguageData('reopen', 'Reopen'),
+        onClick: (rows) => runBulkAction(rows as Offering[], 'reopen')
+    }
+]);
 
 onMounted(() => {
     fetchOfferings();
@@ -344,6 +383,8 @@ onMounted(() => {
             :show-search="false"
             :show-filter="false"
             :show-add-button="false"
+            selectable
+            :bulk-actions="bulkActions"
             @update:currentPage="(page: number) => fetchOfferings({ page })"
             @update:limit="(value: number) => fetchOfferings({ perPage: value })">
             <template #cell-course="{ item }">
@@ -421,5 +462,10 @@ onMounted(() => {
             :type="confirmState.type"
             :loading="confirmState.loading"
             @confirm="confirmState.onConfirm" />
+
+        <BulkResultDialog
+            v-model:visible="bulkResultVisible"
+            :succeeded="bulkResult.succeeded"
+            :failed="bulkResult.failed" />
     </div>
 </template>

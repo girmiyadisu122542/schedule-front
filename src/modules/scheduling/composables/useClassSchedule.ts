@@ -1,3 +1,5 @@
+import type { BulkResultFailure } from '@/components/common/BulkResultDialog.vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { createSharedComposable } from '@vueuse/core';
@@ -21,6 +23,7 @@ import {
     updateClassSchedule,
     deleteClassSchedule,
     publishClassSchedule,
+    bulkClassScheduleAction,
     cancelClassSchedule,
     pinClassSchedule,
     confirmClassSchedule,
@@ -43,9 +46,8 @@ const emptyForm = (): ClassScheduleForm => ({
     instructor_id: null,
     room_id: null,
     session_type_lookup_value_id: null,
-    day_of_week: null,
-    start_time: '',
-    end_time: ''
+    // One blank row to start; the form adds more on demand.
+    slots: [{ day_of_week: null, start_time: '', end_time: '' }]
 });
 
 function classScheduleManager() {
@@ -114,7 +116,16 @@ function classScheduleManager() {
         service: {
             fetchList: (params) => fetchClassSchedules(params as ClassScheduleListParams),
             create: createClassSchedule,
-            update: updateClassSchedule,
+            // An edit moves ONE meeting, so the row list is flattened back to
+            // the flat fields the update endpoint takes. Without this the form
+            // would post `slots` to a route that reads day/start/end and the
+            // edit would quietly do nothing.
+            update: (id: number, payload: ClassSchedulePayload) => {
+                const [slot] = payload.slots ?? [];
+                const { slots, ...rest } = payload;
+
+                return updateClassSchedule(id, slot ? { ...rest, ...slot } : rest);
+            },
             remove: deleteClassSchedule
         },
         emptyForm,
@@ -123,9 +134,14 @@ function classScheduleManager() {
             instructor_id: schedule.instructor_id,
             room_id: schedule.room_id,
             session_type_lookup_value_id: schedule.session_type_lookup_value_id,
-            day_of_week: schedule.day_of_week,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time
+            // Editing is always one meeting, so the row list holds exactly it.
+            slots: [
+                {
+                    day_of_week: schedule.day_of_week,
+                    start_time: schedule.start_time,
+                    end_time: schedule.end_time
+                }
+            ]
         }),
         detailPath: (schedule) => `/scheduling/classes/${schedule.uuid}`,
         schema: classScheduleSchema,
@@ -404,9 +420,9 @@ function classScheduleManager() {
             tooltip: schedule.course_offering?.name ?? undefined,
             courseCode: schedule.course_offering?.course_code ?? undefined,
             courseTitle: schedule.course_offering?.course_title ?? undefined,
-            subtitle:
-                [schedule.room?.name, schedule.instructor?.name].filter(Boolean).join(' · ') ||
-                customizeLanguageData('noRoom', 'No room'),
+            // Always leads with the room, so an unplaced meeting reads
+            // "NRA · Dr Alemu" rather than hiding that it has nowhere to go.
+            subtitle: [roomLabel(schedule.room), schedule.instructor?.name].filter(Boolean).join(' · '),
             badge: schedule.session_type?.name ?? undefined,
             start: schedule.start_time,
             end: schedule.end_time,
@@ -458,8 +474,62 @@ function classScheduleManager() {
         return semesterId ? { semester_id: semesterId } : {};
     };
 
+    // ---- bulk lifecycle decisions ------------------------------------------
+
+    const isBulkRunning = ref(false);
+    const bulkResultVisible = ref(false);
+    const bulkResult = ref<{ succeeded: number; failed: BulkResultFailure[] }>({ succeeded: 0, failed: [] });
+
+    /**
+     * Apply one decision to every selected row.
+     *
+     * Not filtered by what the selection can accept: the server decides that
+     * per row and returns what it refused, so duplicating the lifecycle rules
+     * here would only give them a second place to drift from.
+     *
+     * A partly-successful run is normal — the refusals are surfaced by name,
+     * because "2 failed" leaves the operator hunting for which two.
+     */
+    const runBulkAction = async (
+        rows: ClassSchedule[],
+        action: 'publish' | 'confirm' | 'cancel' | 'delete'
+    ) => {
+        if (!rows.length) return;
+
+        isBulkRunning.value = true;
+        try {
+            const response = await bulkClassScheduleAction({
+                action,
+                schedule_ids: rows.map((row) => row.id)
+            });
+
+            const failed = response.data?.failed ?? [];
+
+            // The toast carries the COUNT only. The detail — one long row label
+            // plus a reason, per refusal — is unreadable crammed into a toast
+            // that vanishes, so it goes to a dialog the reader can dwell on.
+            if (failed.length) {
+                bulkResult.value = { succeeded: response.data?.succeeded ?? 0, failed };
+                bulkResultVisible.value = true;
+                toast.warning(response.message);
+            } else {
+                toast.success(response.message);
+            }
+
+            await resource.fetchItems();
+        } catch (error: unknown) {
+            toast.error(genericError(error));
+        } finally {
+            isBulkRunning.value = false;
+        }
+    };
+
     return {
         ...resource,
+        isBulkRunning,
+        bulkResultVisible,
+        bulkResult,
+        runBulkAction,
         schedules: resource.items,
         fetchSchedules: resource.fetchItems,
         calendarEvents,

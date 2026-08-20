@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 
 import { useLanguageStore } from '@/stores/languageStore';
 import { useExamSchedule } from '@/modules/scheduling/composables/useExamSchedule';
@@ -8,7 +9,10 @@ import type { LookupValueRef } from '@/composables/useLookupValues';
 
 import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
+import { useAllowedRoutesStore } from '@/stores/allowedRoutesStore';
 import MainTable from '@/components/common/MainTable.vue';
+import BulkResultDialog from '@/components/common/BulkResultDialog.vue';
+import type { BulkAction } from '@/components/common/MainTable.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import MainDialog from '@/components/common/MainDialog.vue';
 import MainButton from '@/components/common/MainButton.vue';
@@ -54,6 +58,9 @@ const {
     handleSearch,
     handleFilterChange,
     getActionOptions,
+    runBulkAction,
+    bulkResultVisible,
+    bulkResult,
     openCreateDialog,
     saveExamForm,
 
@@ -137,7 +144,7 @@ const peekFields = computed<EventField[]>(() => {
         { label: customizeLanguageData('examType', 'Type'), value: exam.exam_type?.name || exam.exam_type_code || '—' },
         { label: customizeLanguageData('examDate', 'Date'), value: exam.exam_date },
         { label: customizeLanguageData('time', 'Time'), value: exam.time_range },
-        { label: customizeLanguageData('room', 'Hall'), value: exam.room?.name || '—' },
+        { label: customizeLanguageData('room', 'Hall'), value: roomLabel(exam.room) },
         {
             label: customizeLanguageData('invigilators', 'Invigilators'),
             value: String(exam.required_invigilators)
@@ -185,6 +192,50 @@ onMounted(async () => {
     scheduleFilters.load();
 
     applyFilters(await currentSemesterFilter());
+});
+
+/**
+ * Lifecycle decisions over the selected rows.
+ *
+ * Each action is offered only when the user holds its permission — the same
+ * keys the single-row menu checks. The server still re-checks per row, so this
+ * is about not showing a button that would always be refused, not about
+ * enforcement.
+ */
+const allowedRoutes = useAllowedRoutesStore();
+
+const bulkActions = computed<BulkAction[]>(() => {
+    const actions: BulkAction[] = [];
+
+    if (allowedRoutes.can('publishExamSchedule')) {
+        actions.push({
+            label: customizeLanguageData('publish', 'Publish'),
+            onClick: (rows: unknown[]) => runBulkAction(rows as ExamSchedule[], 'publish')
+        });
+    }
+
+    if (allowedRoutes.can('confirmExamSchedule')) {
+        actions.push({
+            label: customizeLanguageData('confirm', 'Confirm'),
+            onClick: (rows: unknown[]) => runBulkAction(rows as ExamSchedule[], 'confirm')
+        });
+    }
+
+    if (allowedRoutes.can('cancelExamSchedule')) {
+        actions.push({
+            label: customizeLanguageData('cancel', 'Cancel'),
+            onClick: (rows: unknown[]) => runBulkAction(rows as ExamSchedule[], 'cancel')
+        });
+    }
+
+    if (allowedRoutes.can('deleteExamSchedule')) {
+        actions.push({
+            label: customizeLanguageData('delete', 'Delete'),
+            onClick: (rows: unknown[]) => runBulkAction(rows as ExamSchedule[], 'delete')
+        });
+    }
+
+    return actions;
 });
 </script>
 
@@ -289,6 +340,8 @@ onMounted(async () => {
                 :search-placeholder="$lang.searchSittings || 'Search by course code, title or hall...'"
                 :show-add-button="$can('createExamSchedule')"
                 :show-refresh="true"
+                selectable
+                :bulk-actions="bulkActions"
                 @refresh="fetchExams"
                 @add="openCreateDialog"
                 @search="handleSearch"
@@ -335,7 +388,7 @@ onMounted(async () => {
                 </template>
 
                 <template #cell-room="{ item }">
-                    <span class="text-text-secondary">{{ (item as ExamSchedule).room?.name || '—' }}</span>
+                    <span class="text-text-secondary">{{ roomLabel((item as ExamSchedule).room) }}</span>
                 </template>
 
                 <template #cell-required_invigilators="{ item }">
@@ -432,5 +485,10 @@ onMounted(async () => {
             v-model:visible="invigilatorsDialogVisible"
             :sitting="invigilatorsTarget"
             @changed="fetchExams()" />
+
+        <BulkResultDialog
+            v-model:visible="bulkResultVisible"
+            :succeeded="bulkResult.succeeded"
+            :failed="bulkResult.failed" />
     </div>
 </template>
