@@ -44,6 +44,7 @@ import type {
 import { ACTIVATE, DEACTIVATE, DELETE, REQUIRED_USER_FIELDS } from '@/modules/user/constants/fixedValues';
 
 import EyeIcon from '@/assets/icons/EyeIcon.vue';
+import MailIcon from '@/assets/icons/MailIcon.vue';
 import EditIcon from '@/assets/icons/EditIcon.vue';
 import UsersIcon from '@/assets/icons/UsersIcon.vue';
 import UserProfileIcon from '@/assets/icons/UserProfileIcon.vue';
@@ -470,7 +471,7 @@ function registerUserInstance() {
         }
         try {
             isLoading.value = true;
-            const response = await axiosInstance.get(`/user/`, {
+            const response = await axiosInstance.get(`/user`, {
                 params: {
                     id: userId
                 }
@@ -599,6 +600,16 @@ function registerUserInstance() {
             });
         }
 
+        // Same permission the endpoint enforces (`update:user`), so the menu
+        // never offers an action the server would refuse.
+        if (allowedRoutesStore.can('updateUser')) {
+            options.push({
+                label: customizeLanguageData('resendPassword', 'Resend Password'),
+                icon: MailIcon,
+                onClick: () => initiateResendPassword(item)
+            });
+        }
+
         if (allowedRoutesStore.can('changeUserState')) {
             options.push({
                 label:
@@ -634,6 +645,58 @@ function registerUserInstance() {
                     confirmState.value.show = false;
                 } catch (error) {
                     toast.error(customizeLanguageData('errorDeleting'));
+                    confirmState.value.show = false;
+                } finally {
+                    confirmState.value.loading = false;
+                }
+            }
+        };
+    };
+
+    /**
+     * Issue a fresh password and email it to the user.
+     *
+     * Behind a confirmation because it is not a read: the account's CURRENT
+     * password stops working the moment this succeeds. Somebody who clicked it
+     * meaning "remind them what their password is" would otherwise lock out a
+     * user who was perfectly fine.
+     *
+     * The server refuses and changes nothing if the mail cannot be sent, so a
+     * failure here never leaves the person holding credentials they never got.
+     */
+    const initiateResendPassword = (item: User) => {
+        if (!item.id) {
+            return;
+        }
+        const userId = item.id;
+
+        confirmState.value = {
+            show: true,
+            title: customizeLanguageData('resendPassword', 'Resend password'),
+            message: `${customizeLanguageData(
+                'resendPasswordConfirm',
+                'Generate a new password for'
+            )} ${item.full_name}? ${customizeLanguageData(
+                'resendPasswordWarning',
+                'Their current password will stop working, and the new one is emailed to them.'
+            )}`,
+            type: STATUS_DEACTIVATE,
+            confirmLabel: customizeLanguageData('resendPassword', 'Resend password'),
+            loading: false,
+            onConfirm: async () => {
+                confirmState.value.loading = true;
+                try {
+                    const response = await axiosInstance.post(`/user/${userId}/resend-password`);
+                    toast.success(
+                        response.data?.message ||
+                            customizeLanguageData('passwordResent', 'A new password has been sent')
+                    );
+                    confirmState.value.show = false;
+                } catch (error: any) {
+                    toast.error(
+                        error?.response?.data?.message ||
+                            customizeLanguageData('somethingWentWrong', 'Something went wrong')
+                    );
                     confirmState.value.show = false;
                 } finally {
                     confirmState.value.loading = false;

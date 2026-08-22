@@ -76,7 +76,7 @@ export function useRolePermissions(roleId: number) {
         try {
             const [roleRes, groupsRes] = await Promise.all([
                 axiosInstance.get(`/role/${roleId}/permission-groups`),
-                axiosInstance.get('/role/', { params: { limit: 1 } })
+                axiosInstance.get('/role', { params: { limit: 1 } })
             ]);
 
             permissionGroups.value = roleRes.data.data ?? [];
@@ -99,7 +99,7 @@ export function useRolePermissions(roleId: number) {
 
     const fetchRoleDetail = async () => {
         try {
-            const res = await axiosInstance.get(`/role/`, { params: { limit: 100 } });
+            const res = await axiosInstance.get(`/role`, { params: { limit: 100 } });
             const found = (res.data.data ?? []).find((role: any) => role.id === roleId);
             role.value = found ?? null;
         } catch {}

@@ -141,3 +141,35 @@ export async function fetchOfferingSummary(params: Record<string, unknown> = {})
 
     return response.data.data;
 }
+
+/** One row a bulk run could not act on, and why. */
+export interface BulkFailure {
+    id: number;
+    label: string | null;
+    reason: string;
+}
+
+export interface BulkActionResult {
+    data: { succeeded: number; failed: BulkFailure[] };
+    message: string;
+}
+
+export interface BulkOfferingPayload {
+    action: 'approve' | 'submit' | 'reopen';
+    offering_ids: number[];
+    decision_lookup_value_id?: number | null;
+    remark?: string | null;
+}
+
+/**
+ * One decision over many offerings.
+ *
+ * Partial success is the contract, not a failure mode: the server evaluates
+ * every row at its own approval tier and returns those it refused, so callers
+ * must read `data.failed` rather than treating a 200 as "all done".
+ */
+export async function bulkOfferingAction(payload: BulkOfferingPayload): Promise<BulkActionResult> {
+    const response = await axiosInstance.post(`${BASE}/bulk-action`, payload);
+
+    return response.data;
+}

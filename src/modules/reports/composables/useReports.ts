@@ -4,7 +4,14 @@ import { toast } from 'vue-sonner';
 import { useLanguageStore } from '@/stores/languageStore';
 import { useDropdownOptions } from '@/composables/useDropdownOptions';
 import { readApiErrorMessage } from '@/utils/apiError';
-import { DROPDOWN_PARAM_KEY } from '@/config/appConfig';
+import axiosInstance from '@/api/axiosInstance';
+import { downloadBlob, generateExportFilename } from '@/utils/exportUtils';
+import {
+    DROPDOWN_PARAM_KEY,
+    EXPORT_FORMAT_XLSX,
+    RESPONSE_TYPE_BLOB,
+    type ExportFormat
+} from '@/config/appConfig';
 import type { DropdownOption } from '@/types/CommonTypes';
 import {
     fetchComparison,
@@ -208,6 +215,57 @@ export function useReports() {
         await load(tab);
     };
 
+    const isExporting = ref(false);
+
+    /**
+     * Which endpoint each tab exports from.
+     *
+     * `compare` is absent deliberately: it is a two-semester diff rendered as
+     * paired totals, not a row list, so a spreadsheet of it would be a worse
+     * artefact than the screen. The export control hides rather than offering
+     * a download that produces something useless.
+     */
+    const EXPORT_PATHS: Partial<Record<ReportTab, string>> = {
+        setup: 'term-setup',
+        exceptions: 'exceptions',
+        rooms: 'room-utilisation',
+        workload: 'instructor-workload'
+    };
+
+    const canExport = computed(() => !!EXPORT_PATHS[activeTab.value] && hasSemester.value);
+
+    /**
+     * Download the report currently on screen.
+     *
+     * Sends the SAME filters the view was built with, so the file matches what
+     * the reader is looking at rather than a re-query with different arguments.
+     *
+     * `responseType: 'blob'` is essential — without it axios parses the binary
+     * body as text and the saved workbook is corrupt.
+     */
+    const exportReport = async (format: ExportFormat = EXPORT_FORMAT_XLSX) => {
+        const path = EXPORT_PATHS[activeTab.value];
+        if (!path || !semesterId.value) return;
+
+        isExporting.value = true;
+        try {
+            const response = await axiosInstance.get(`/reports/${path}`, {
+                params: {
+                    semester_id: semesterId.value,
+                    ...(activeTab.value === 'compare' ? { compare_semester_id: compareSemesterId.value } : {}),
+                    export: format
+                },
+                responseType: RESPONSE_TYPE_BLOB
+            });
+
+            downloadBlob(response.data, generateExportFilename(path, format));
+        } catch (error: unknown) {
+            toast.error(genericError(error));
+        } finally {
+            isExporting.value = false;
+        }
+    };
+
     /** Re-fetch whatever is on screen — used by the semester picker and refresh. */
     const reload = () => load(activeTab.value);
 
@@ -227,6 +285,9 @@ export function useReports() {
         semesterDropdown,
         selectTab,
         load,
-        reload
+        reload,
+        isExporting,
+        canExport,
+        exportReport
     };
 }

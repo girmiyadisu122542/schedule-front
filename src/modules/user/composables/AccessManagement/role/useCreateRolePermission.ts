@@ -50,7 +50,7 @@ export function useCreateRolePermission(initialRoleId: number | null = null) {
         savedRoleId.value = id;
         activeTab.value = ROLE_PERMISSION_TAB.ASSIGN_PERMISSIONS;
         try {
-            const res = await axiosInstance.get('/role/', { params: { limit: 100 } });
+            const res = await axiosInstance.get('/role', { params: { limit: 100 } });
             const found = (res.data.data ?? []).find((role: any) => role.id === id);
             if (found) {
                 savedRoleName.value = found.name;

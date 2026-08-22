@@ -81,14 +81,27 @@ export interface ClassSchedule {
  * mirrors them off the offering, and the composite foreign keys would reject
  * anything else. The status is never caller-supplied either.
  */
+/** One day + time row on the create form. */
+export interface ClassScheduleSlot {
+    day_of_week: number | null;
+    start_time: string;
+    end_time: string;
+}
+
 export interface ClassScheduleForm {
     course_offering_id: number | null;
     instructor_id: number | null;
     room_id: number | null;
     session_type_lookup_value_id: number | null;
-    day_of_week: number | null;
-    start_time: string;
-    end_time: string;
+    /**
+     * Every day and time this course meets.
+     *
+     * Always at least one row — one slot IS the single-session case, so the
+     * form has no separate "one meeting" shape to keep in step. Editing works
+     * on exactly one, because an edit moves an existing meeting rather than
+     * adding more.
+     */
+    slots: ClassScheduleSlot[];
 }
 
 export interface PaginatedClassSchedules {

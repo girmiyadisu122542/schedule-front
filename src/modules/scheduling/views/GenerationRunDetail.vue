@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 import { useRoute } from 'vue-router';
 import { toast } from 'vue-sonner';
 
@@ -96,7 +97,7 @@ const sessionColumns = computed(() => [
     {
         key: 'room',
         label: customizeLanguageData('room', 'Room'),
-        format: (row: ClassSchedule) => row.room?.name
+        format: (row: ClassSchedule) => roomLabel(row.room)
     }
 ]);
 
@@ -107,7 +108,7 @@ const sittingColumns = computed(() => [
     {
         key: 'room',
         label: customizeLanguageData('examHall', 'Hall'),
-        format: (row: ExamSchedule) => row.room?.name
+        format: (row: ExamSchedule) => roomLabel(row.room)
     }
 ]);
 

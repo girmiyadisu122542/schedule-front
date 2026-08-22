@@ -30,9 +30,14 @@ export interface ClassSchedulePayload {
     instructor_id?: number | null;
     room_id?: number | null;
     session_type_lookup_value_id?: number | null;
-    day_of_week: number;
-    start_time: string;
-    end_time: string;
+    /**
+     * Create sends `slots` — one row per day/time. Update sends the flat
+     * fields, because an edit moves exactly one existing meeting.
+     */
+    slots?: Array<{ day_of_week: number; start_time: string; end_time: string }>;
+    day_of_week?: number;
+    start_time?: string;
+    end_time?: string;
 }
 
 export async function fetchClassSchedules(params: ClassScheduleListParams = {}): Promise<PaginatedClassSchedules> {
@@ -179,4 +184,34 @@ export async function fetchPlacementSuggestions(courseOfferingId: number, limit 
     });
 
     return response.data.data ?? [];
+}
+
+/** One row a bulk run could not act on, and why. */
+export interface ScheduleBulkFailure {
+    id: number;
+    label: string | null;
+    reason: string;
+}
+
+export interface ScheduleBulkResult {
+    data: { succeeded: number; failed: ScheduleBulkFailure[] };
+    message: string;
+}
+
+/**
+ * One lifecycle decision over many class schedules.
+ *
+ * Partial success is the contract: the server runs each row through the same
+ * service call the single-item endpoint uses, so a mixed selection is fine and
+ * whatever it refuses comes back named in `data.failed`. A 200 does NOT mean
+ * everything was done.
+ */
+export async function bulkClassScheduleAction(payload: {
+    action: 'publish' | 'confirm' | 'cancel' | 'delete';
+    schedule_ids: number[];
+    remark?: string | null;
+}): Promise<ScheduleBulkResult> {
+    const response = await axiosInstance.post(`${BASE}/bulk-action`, payload);
+
+    return response.data;
 }

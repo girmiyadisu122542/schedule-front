@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 import { useRoute } from 'vue-router';
 
 import { useLanguageStore } from '@/stores/languageStore';
@@ -84,7 +85,7 @@ onMounted(() => load(String(route.params.uuid)));
                 numeric />
             <DetailField
                 :label="$lang.examHall || 'Hall'"
-                :value="sitting?.room?.name" />
+                :value="roomLabel(sitting?.room)" />
             <DetailField
                 :label="$lang.section || 'Section'"
                 :value="sitting?.section?.name" />

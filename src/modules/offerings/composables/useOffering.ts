@@ -1,3 +1,4 @@
+import type { BulkResultFailure } from '@/components/common/BulkResultDialog.vue';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { createSharedComposable } from '@vueuse/core';
@@ -29,6 +30,7 @@ import {
     deleteOffering,
     submitOffering,
     reopenOffering,
+    bulkOfferingAction,
     recordApproval,
     fetchOfferingSummary,
     type OfferingListParams,
@@ -291,6 +293,71 @@ function offeringManager() {
         }
     };
 
+    // ---- bulk decisions -----------------------------------------------------
+
+    const isBulkRunning = ref(false);
+    const bulkResultVisible = ref(false);
+    const bulkResult = ref<{ succeeded: number; failed: BulkResultFailure[] }>({ succeeded: 0, failed: [] });
+
+    /**
+     * Apply one decision to every selected offering.
+     *
+     * The server judges each row at ITS OWN approval tier, so a mixed selection
+     * is fine and expected: what it cannot decide it names back, and those are
+     * surfaced here rather than swallowed. A run that partly succeeds is the
+     * normal case, not an error — reporting "12 of 14" and why the two failed
+     * is more use than a single red toast.
+     */
+    const runBulkAction = async (
+        rows: Offering[],
+        action: 'approve' | 'submit' | 'reopen',
+        decisionCodeValue?: string
+    ) => {
+        if (!rows.length) return;
+
+        let decisionId: number | null = null;
+        if (action === 'approve') {
+            const decision = decisions.options.value.find(
+                (option: LookupValueRef) => option.code === decisionCodeValue
+            );
+            if (!decision) {
+                toast.error(genericError(null));
+
+                return;
+            }
+            decisionId = decision.id;
+        }
+
+        isBulkRunning.value = true;
+        try {
+            const response = await bulkOfferingAction({
+                action,
+                offering_ids: rows.map((offering) => offering.id),
+                decision_lookup_value_id: decisionId,
+                remark: null
+            });
+
+            const failed = response.data?.failed ?? [];
+
+            // The toast carries the COUNT only. The detail — one long row label
+            // plus a reason, per refusal — is unreadable crammed into a toast
+            // that vanishes, so it goes to a dialog the reader can dwell on.
+            if (failed.length) {
+                bulkResult.value = { succeeded: response.data?.succeeded ?? 0, failed };
+                bulkResultVisible.value = true;
+                toast.warning(response.message);
+            } else {
+                toast.success(response.message);
+            }
+
+            await refresh();
+        } catch (error: unknown) {
+            toast.error(genericError(error));
+        } finally {
+            isBulkRunning.value = false;
+        }
+    };
+
     // ---- author actions -----------------------------------------------------
 
     const runOfferingAction = async (offering: Offering, action: (id: number) => Promise<{ message?: string }>) => {
@@ -427,6 +494,10 @@ function offeringManager() {
         decisionTarget,
         decisionCode,
         decisionRemark,
+        isBulkRunning,
+        bulkResultVisible,
+        bulkResult,
+        runBulkAction,
         isDeciding,
         openDecision,
         closeDecision,

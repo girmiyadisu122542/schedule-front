@@ -41,7 +41,15 @@ const emit = defineEmits<{
 const { customizeLanguageData } = useLanguageStore();
 
 const semesterDropdown = useDropdownOptions<DropdownOption>('/semesters', { [DROPDOWN_PARAM_KEY]: true });
-const departmentDropdown = useDropdownOptions<DropdownOption>('/departments', { [DROPDOWN_PARAM_KEY]: true });
+// `authorable` narrows this to the departments the signed-in user may file an
+// offering for. A Committee Leader is bound to their own department, so the
+// whole institution would be a list of choices the server refuses one by one.
+// An unrestricted user (super admin, or anyone with `see:all:departments`)
+// still sees everything — the server treats "unrestricted" as no narrowing.
+const departmentDropdown = useDropdownOptions<DropdownOption>('/departments', {
+    [DROPDOWN_PARAM_KEY]: true,
+    authorable: true
+});
 const programDropdown = useDropdownOptions<DropdownOption>('/programs', { [DROPDOWN_PARAM_KEY]: true });
 const sectionDropdown = useDropdownOptions<DropdownOption>('/sections', { [DROPDOWN_PARAM_KEY]: true });
 const courseDropdown = useDropdownOptions<DropdownOption>('/courses', { [DROPDOWN_PARAM_KEY]: true });
@@ -265,14 +273,11 @@ onMounted(() => {
                         search
                         show-clear
                         :loading="sectionDropdown.loading.value" />
-                    <InputText
-                        v-model="form.expected_students"
-                        :label="$lang.expectedStudents || 'Expected students'"
-                        :placeholder="$lang.enterExpectedStudents || 'e.g. 45'"
-                        :invalid="!!errors.expected_students"
-                        :message="errors.expected_students"
-                        message-type="error"
-                        size="normal" />
+                    <!--
+                        No "expected students" input: the number belongs to the
+                        section, and the server now reads it from there. See
+                        CourseOfferingService::buildAttributes().
+                    -->
                 </div>
 
                 <TextArea

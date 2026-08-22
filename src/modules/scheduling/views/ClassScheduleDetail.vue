@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 import { useRoute } from 'vue-router';
 
 import { useLanguageStore } from '@/stores/languageStore';
@@ -61,7 +62,7 @@ onMounted(() => {
                 numeric />
             <DetailField
                 :label="$lang.room || 'Room'"
-                :value="session?.room?.name" />
+                :value="roomLabel(session?.room)" />
             <DetailField
                 :label="$lang.instructor || 'Instructor'"
                 :value="session?.instructor?.name" />

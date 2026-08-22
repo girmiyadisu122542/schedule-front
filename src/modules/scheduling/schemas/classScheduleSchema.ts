@@ -34,17 +34,46 @@ export const classScheduleSchema = () => {
                 instructor_id: z.number().int().positive().nullable(),
                 room_id: z.number().int().positive().nullable(),
                 session_type_lookup_value_id: z.number().int().positive().nullable(),
-                day_of_week: z
-                    .number({ message: translations.value.dayIsRequired || 'Please choose a day' })
-                    .int()
-                    .min(MONDAY, translations.value.dayIsRequired || 'Please choose a day')
-                    .max(SUNDAY, translations.value.dayIsRequired || 'Please choose a day'),
-                start_time: time(translations.value.invalidTime || 'Enter the time as HH:MM'),
-                end_time: time(translations.value.invalidTime || 'Enter the time as HH:MM')
+                // Every day/time the course meets. Validated per row so the
+                // error lands on the row that is wrong, not on the form.
+                slots: z
+                    .array(
+                        z
+                            .object({
+                                day_of_week: z
+                                    .number({
+                                        message: translations.value.dayIsRequired || 'Please choose a day'
+                                    })
+                                    .int()
+                                    .min(MONDAY, translations.value.dayIsRequired || 'Please choose a day')
+                                    .max(SUNDAY, translations.value.dayIsRequired || 'Please choose a day'),
+                                start_time: time(
+                                    translations.value.invalidTime || 'Enter the time as HH:MM'
+                                ),
+                                end_time: time(translations.value.invalidTime || 'Enter the time as HH:MM')
+                            })
+                            .refine((slot) => slot.end_time > slot.start_time, {
+                                path: ['end_time'],
+                                message:
+                                    translations.value.endTimeAfterStart ||
+                                    'The end time must be after the start time'
+                            })
+                    )
+                    .min(1, translations.value.addAtLeastOneSession || 'Add at least one session')
             })
-            .refine((value) => value.end_time > value.start_time, {
-                path: ['end_time'],
-                message: translations.value.endTimeAfterStart || 'The end time must be after the start time'
-            })
+            // Two identical rows would be one wasted round trip and one
+            // confusing clash error, so they are caught before sending.
+            .refine(
+                (value) =>
+                    new Set(
+                        value.slots.map((slot) => `${slot.day_of_week}|${slot.start_time}|${slot.end_time}`)
+                    ).size === value.slots.length,
+                {
+                    path: ['slots'],
+                    message:
+                        translations.value.duplicateSessionSlot ||
+                        'Two sessions have the same day and time'
+                }
+            )
     );
 };

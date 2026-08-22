@@ -101,19 +101,28 @@ export function usePermissionOverride(user: Ref<User | null | undefined>) {
         permission_ids: []
     });
 
-    const fetchPermissionGroups = async (entityTypeId: number | string, parentId?: number | null) => {
+    /**
+     * One level of the permission-group tree.
+     *
+     * With no parent this returns the ROOT groups; with one it returns that
+     * node's children, which is how the tree expands a level at a time.
+     *
+     * `entityTypeId` is accepted and ignored: this schema has no entity types
+     * on permission groups — they are a parent/child tree — and the argument is
+     * kept only so the existing callers need not change.
+     */
+    const fetchPermissionGroups = async (_entityTypeId?: number | string, parentId?: number | null) => {
         try {
-            const response = await axiosInstance.get<ApiResponse<PermissionGroup>>(
-                '/permission-group/permission/entity-type',
-                {
-                    params: {
-                        entity_type_id: entityTypeId || undefined,
-                        parent_id: parentId || selectedPermissionGroupParentId.value,
-                        user_id: selectedUser.value?.id || undefined,
-                        dropdown: true
-                    }
+            const parent = parentId ?? selectedPermissionGroupParentId.value;
+            const response = await axiosInstance.get<ApiResponse<PermissionGroup>>('/permission-group', {
+                params: {
+                    // Explicitly ask for the roots rather than sending an empty
+                    // parent_id, which the server cannot tell from "unfiltered".
+                    ...(parent ? { parent_id: parent } : { only_root: true }),
+                    limit: 100,
+                    dropdown: true
                 }
-            );
+            });
 
             if (parentId === null || parentId === undefined) {
                 permissionGroups.value = response.data.data;

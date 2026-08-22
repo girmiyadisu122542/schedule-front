@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { roomLabel } from '@/modules/scheduling/utils/roomLabel';
 import { toast } from 'vue-sonner';
 
 import { useLanguageStore } from '@/stores/languageStore';
@@ -13,6 +14,8 @@ import { readApiErrorMessage } from '@/utils/apiError';
 import StatusBadge from '@/components/common/StatusBadge.vue';
 import Breadcrumb from '@/components/common/Breadcrumb.vue';
 import MainTable from '@/components/common/MainTable.vue';
+import BulkResultDialog from '@/components/common/BulkResultDialog.vue';
+import type { BulkAction } from '@/components/common/MainTable.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import ActionMenu from '@/components/common/ActionMenu.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
@@ -58,6 +61,9 @@ const {
     handleSearch,
     handleFilterChange,
     getActionOptions,
+    runBulkAction,
+    bulkResultVisible,
+    bulkResult,
     openCreateDialog,
     saveScheduleForm,
     isEditable,
@@ -198,7 +204,7 @@ const peekFields = computed<EventField[]>(() => {
     return [
         { label: customizeLanguageData('dayOfWeek', 'Day'), value: schedulingConstants.dayName(schedule.day_of_week) },
         { label: customizeLanguageData('time', 'Time'), value: schedule.time_range },
-        { label: customizeLanguageData('room', 'Room'), value: schedule.room?.name || '—' },
+        { label: customizeLanguageData('room', 'Room'), value: roomLabel(schedule.room) },
         { label: customizeLanguageData('instructor', 'Instructor'), value: schedule.instructor?.name || '—' },
         { label: customizeLanguageData('sessionType', 'Session'), value: schedule.session_type?.name || '—' },
         { label: customizeLanguageData('section', 'Section'), value: schedule.section?.name || '—' }
@@ -245,6 +251,50 @@ onMounted(async () => {
     scheduleFilters.load();
 
     applyFilters(await currentSemesterFilter());
+});
+
+/**
+ * Lifecycle decisions over the selected rows.
+ *
+ * Each action is offered only when the user holds its permission — the same
+ * keys the single-row menu checks. The server still re-checks per row, so this
+ * is about not showing a button that would always be refused, not about
+ * enforcement.
+ */
+const allowedRoutes = useAllowedRoutesStore();
+
+const bulkActions = computed<BulkAction[]>(() => {
+    const actions: BulkAction[] = [];
+
+    if (allowedRoutes.can('publishClassSchedule')) {
+        actions.push({
+            label: customizeLanguageData('publish', 'Publish'),
+            onClick: (rows: unknown[]) => runBulkAction(rows as ClassSchedule[], 'publish')
+        });
+    }
+
+    if (allowedRoutes.can('confirmClassSchedule')) {
+        actions.push({
+            label: customizeLanguageData('confirm', 'Confirm'),
+            onClick: (rows: unknown[]) => runBulkAction(rows as ClassSchedule[], 'confirm')
+        });
+    }
+
+    if (allowedRoutes.can('cancelClassSchedule')) {
+        actions.push({
+            label: customizeLanguageData('cancel', 'Cancel'),
+            onClick: (rows: unknown[]) => runBulkAction(rows as ClassSchedule[], 'cancel')
+        });
+    }
+
+    if (allowedRoutes.can('deleteClassSchedule')) {
+        actions.push({
+            label: customizeLanguageData('delete', 'Delete'),
+            onClick: (rows: unknown[]) => runBulkAction(rows as ClassSchedule[], 'delete')
+        });
+    }
+
+    return actions;
 });
 </script>
 
@@ -347,6 +397,8 @@ onMounted(async () => {
                 :search-placeholder="$lang.searchSchedules || 'Search by course code, title or room...'"
                 :show-add-button="$can('createClassSchedule')"
                 :show-refresh="true"
+                selectable
+                :bulk-actions="bulkActions"
                 @refresh="fetchSchedules"
                 @add="openCreateDialog"
                 @search="handleSearch"
@@ -452,7 +504,7 @@ onMounted(async () => {
                     <span
                         v-else
                         class="text-text-secondary">
-                        {{ (item as ClassSchedule).room?.name || '—' }}
+                        {{ roomLabel((item as ClassSchedule).room) }}
                     </span>
                 </template>
 
@@ -534,5 +586,10 @@ onMounted(async () => {
             :type="confirmState.type"
             :loading="confirmState.loading"
             @confirm="confirmState.onConfirm" />
+
+        <BulkResultDialog
+            v-model:visible="bulkResultVisible"
+            :succeeded="bulkResult.succeeded"
+            :failed="bulkResult.failed" />
     </div>
 </template>

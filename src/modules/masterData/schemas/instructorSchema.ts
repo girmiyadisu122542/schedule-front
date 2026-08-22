@@ -40,15 +40,17 @@ export const instructorSchema = () => {
                         translations.value.employeeNoIsTooLong ||
                             `Employee number must be at most ${MAX_CODE_LENGTH} characters`
                     ),
+                // Required: the instructor's portal account is created from
+                // this address, and the one-time password is sent to it.
                 email: z
                     .string()
                     .trim()
+                    .min(1, translations.value.emailIsRequired || 'Email is required')
                     .max(MAX_INSTRUCTOR_EMAIL_LENGTH, translations.value.emailIsTooLong || 'The email is too long')
                     .refine(
-                        (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+                        (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
                         translations.value.invalidEmail || 'Enter a valid email address'
-                    )
-                    .transform((value) => value || null),
+                    ),
                 phone: z
                     .string()
                     .trim()

@@ -21,7 +21,8 @@ const emptyForm = (): DepartmentForm => ({
     code: '',
     college_id: null,
     head_user_id: null,
-    is_active: true
+    is_active: true,
+    room_ids: []
 });
 
 function departmentManager() {
@@ -52,7 +53,8 @@ function departmentManager() {
             code: department.code,
             college_id: department.college_id,
             head_user_id: department.head_user_id,
-            is_active: department.is_active
+            is_active: department.is_active,
+            room_ids: (department.rooms ?? []).map((room) => room.id)
         }),
         detailPath: (department) => `/departments/${department.uuid}`,
         schema: departmentSchema,
